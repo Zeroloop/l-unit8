@@ -1,0 +1,35 @@
+<div class="testCase">
+	<div class="body">		
+	<h3>
+		<input type="checkbox" [self->isSelectedCase ? 'checked']>
+		[self->type]
+	</h3>
+	[iterate:self->methodSequence,local('methodName')]
+		<div class="testMethod [!self->isSelectedMethod(#methodName)?'testCaseSkipped']">
+			<div class="body">		
+				<h4>
+					[if:self->isCurrentMethod(#methodName)]
+						<img class="loading" src="/_img/loaderB.gif">
+					[/if]
+					<input type="checkbox" name="suiteMethods" value="[self->type]->[#methodName]" [self->isSelectedMethod(#methodName) ? 'checked'] /> 
+					[#methodName] 
+				</h4>	
+				[iterate:self->methodResults(#methodName),local('taskResult')]
+					<div class="methodResult" [!self->hasDisplayed(#methodName,#taskResult->name) && unit_isAjax ?'style="display:none"']>
+						<table cellspacing=0>
+							<tr valign=top  class="[#taskResult->cssClass]">
+								<td class="name">[#taskResult->name]</td>
+								<td>[#taskResult->message]</td>
+								<td class="time">[#taskResult->time]</td>
+							</tr>
+						</table>
+						<!--<div class="taskDebug">[#taskResult->debug]</div>-->
+					</div>
+				[/iterate]
+			</div>
+			<div class="footer">&nbsp;</div>
+		</div>
+	[/iterate]
+	</div>
+	<div class="footer">&nbsp;</div>
+</div>

@@ -1,0 +1,369 @@
+﻿<?lassoscript
+
+define_type:'classAnalyser';
+
+	local:
+		'sourceCode'			= string,
+		'sourceStats'			= map,
+		'sourceLineCount'	= integer,
+		'methodStats'			= array;
+
+
+//=============================================================================
+//
+//	->getStats
+//
+
+define_tag:'getStats';
+	return: (self->'sourceStats');
+/define_tag;
+
+
+//=============================================================================
+//
+//	->getTestClassName
+//
+
+define_tag:'testClassName';
+	return: self->'sourceStats'->find('testClass')->find('className');
+/define_tag;
+
+define_tag:'className';
+	(local('name') := self->'sourceStats'->find('appClass')->find('className'))
+	?	return: #name  
+	|	return: self->'sourceStats'->find('testClass')->find('className');
+/define_tag;
+
+define_tag:'getTestClassName';
+	return: (((self->'sourceStats')->find:'testClass')->find:'className');
+/define_tag;
+
+
+//============================================================================
+//
+//	->reset
+//
+//............................................................................
+
+define_tag:'reset';
+
+	(self->'sourceCode')		= string;
+	(self->'sourceLineCount')	= integer;
+	(self->'methodStats')		= array;
+
+/define_tag;
+
+//=============================================================================
+//
+//	->loadClass
+//
+
+define_tag:'loadClass',
+	-required = 'classFile', -type = 'string';
+
+	local(
+		'names' = map,
+		'sourceCode' = @self->'sourceCode' 
+	);
+
+	!	local_defined('clasName')
+	?	local('className') = string;
+
+	inline:
+		-username = unit_filesUser,
+		-password = unit_filesPswd;
+		
+		
+		if:!#classFile;
+			//	Missing file
+			//		stay silent for now - let metrics deal with error
+			//		unit_controller->error('->getClass empty - metrics may not be available');
+			return:map;
+		else:file_exists(#classFile);
+			 #sourceCode = string(file_read(#classFile));
+		else;
+			unit_controller->error('Could not read source file '#classFile' - metrics may not be available');
+			return:map;
+		/if;
+	/inline;
+	
+	#sourceCode->removeLeading(bom_utf8)
+							&	trim
+							&	replace('\r\n','\r')
+							&	replace('\n', '\r');
+
+	#sourceCode = string_replaceRegExp(
+								#sourceCode,
+								-find = '\\/\\*[\\s\\S]+?\\*\\/',
+								-replace = '',
+								-ignoreCase 
+							);
+	
+	#names->insert('fileName' = #classFile->split('/')->last);
+	#names->insert('className' = string_findRegExp(
+														#sourceCode,
+														-find = 'define_type[:(]*\\s*\'(\\w+)',
+														-ignorecase)->last,
+														
+													);
+
+	return: #names;	
+
+/define_tag;
+
+
+
+//=============================================================================
+//
+//	->analyzeClass
+//
+
+define_tag:'analyzeClass',
+	-required = 'file', -type = 'string';
+
+	local:'classType' = string;
+
+	local_defined('forTestClass')
+	?	#classType = 'testClass'
+	|	#classType = 'appClass';
+
+	!	local_defined('clasName')
+	?	local('className') = string;	
+
+	if:!(self->'sourceStats');
+		self->'sourceStats'->insert(
+			'appClass' = map(
+									'fileName'		= string,
+									'className'	= string,
+									'lineCount'		= integer,
+									'methodStats' = array
+								)
+			);
+
+		self->'sourceStats'->insert(
+			'testClass' = map(
+									'fileName'		= string,
+									'className'	= string,
+									'lineCount'		= integer,
+									'methodStats' = array
+								)
+		);
+	/if;
+
+	self->reset;
+	
+	self->'sourceStats'->find(#classType)->insertFrom(self->loadClass(#file)->iterator);
+										
+	#classType == 'testClass'
+		? self->parseConstructor(-forTestClass)
+		| self->parseConstructor(-forAppClass);
+
+	#classType == 'testClass'
+		? self->parseMethods(-forTestClass)
+		| self->parseMethods(-forAppClass);
+
+	self->'sourceStats'->find(#classType)->find('methodStats') = (self->'methodStats');
+	self->'sourceStats'->find(#classType)->find('lineCount') = (self->'sourceLineCount');
+
+/define_tag;
+
+
+
+
+//=============================================================================
+//
+//	->parseConstructor
+//
+
+define_tag:'parseConstructor';
+
+	local:
+		'constructor'				= array,
+		'tagSource'				= string,
+		'methodCount'			= integer,
+		'appSourceLineCount'	= integer,
+		'methodName'			= string,
+		'methodLineCount'		= integer;
+
+	#constructor = string(
+								string_findRegExp(
+									self->'sourceCode',
+									-find = 'define_type[:(]*\\s*\'\\w+[\\s\\S]+?define_tag;',
+									-ignorecase 
+								)->last
+							);
+
+	#constructor = self->decomment(#constructor->split('\r'));
+
+	#methodLineCount = #constructor->size;
+	self->'sourceLineCount' += #methodLineCount;
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->parseMethods -forTestClass
+//
+
+define_tag:'parseMethods';
+
+	local:
+		'methods'					= array,
+		'methodSource'			= string,
+		'methodName'			= string,
+		'regexpMatch'				= string,
+		'methodStats'				= map,
+		'methodAssertions'		= array,
+		'methodOptParams'	= array,
+		'methodReqParams'	= array,
+		'methodLineCount'		= integer;
+
+//	we only want to collect the test_ methods
+//	to count towards method coverage
+//	which should align to app class methods of the same name
+
+	if:local_defined('forTestClass');
+		#methods = string_findRegExp(
+								self->'sourceCode',
+								-find = 'define_tag[:(]*\\s*?\'test_\\w+[\\s\\S]+?/define_tag;',
+								-ignorecase 
+							);
+	else;
+		#methods = string_findRegExp(
+								self->'sourceCode',
+								-find = 'define_tag[:(]*\\s*?\'\\w+[\\s\\S]+?/define_tag;',
+								-ignorecase 
+							);
+	/if;	
+			
+	iterate: #methods, #methodSource;
+	
+		#methodStats = map;
+		#methodAssertions = array;
+		#methodReqParams = array;
+		#methodOptParams = array;
+		#methodSource 	= self->decomment(#methodSource->split('\r'));
+
+		
+		//	Extract Assertions
+		iterate:string_findRegExp( 
+											#methodSource->join('\r'), 
+											-find = '(assert_\\w*)\\s*[\\(:]',
+											-ignorecase 
+										),#regexpMatch;
+										
+			!	(loop_count % 2) 
+			?	#methodAssertions->insert(#regexpMatch);
+		
+		/iterate;
+		
+		//	Extract Custom Assertions
+		iterate:string_findRegExp( 
+											#methodSource->join('\r'), 
+											-find = 'storeResult.*?\'name\'\\s*=\\s*\'(\\w+)\'',
+											-ignorecase 
+										),#regexpMatch;
+										
+			!	(loop_count % 2) 
+			?	#methodAssertions->insert('custom_'#regexpMatch);
+		/iterate;
+		
+		
+		iterate:string_findRegExp( 
+											#methodSource->join('\r'), 
+											-find = '-required\\s*=\\s*\'(\\w+)\'',
+											-ignorecase 
+										),#regexpMatch;
+										
+			!	(loop_count % 2) 
+			?	#methodReqParams->insert(#regexpMatch);
+		
+		/iterate;
+
+		iterate:string_findRegExp( 
+											#methodSource->join('\r'), 
+											-find = '-optional\\s*=\\s*\'(\\w+)\'',
+											-ignorecase 
+										),#regexpMatch;
+										
+			!	(loop_count % 2) 
+			?	#methodOptParams->insert(#regexpMatch);
+		
+		/iterate;
+		
+		#methodName 	= string_findRegExp( 
+											#methodSource->get(1), 
+											-find = 'define_tag[:(]*\\s*?\'(\\w+)',
+											-ignorecase 
+										)->last;
+
+		debug:#methodName' Extract Stats',-open,-title;
+		handle_error;debug(error_msg,-error);/handle_error;
+		handle;debug(-close);/handle;
+
+		#methodOptParams->size
+		?	debug:'-optional' = #methodOptParams;
+		
+		#methodReqParams->size
+		?	debug:'-required' = #methodReqParams;
+								
+		#methodAssertions->size
+		?	debug:'Assertions' = #methodAssertions;
+								
+		#methodLineCount = #methodSource->size;
+
+		#methodStats = map(
+										'optional' = #methodOptParams,
+										'required' = #methodReqParams,
+										'assertions' = #methodAssertions,
+										'linecount' = #methodLineCount,
+									);
+
+		
+		self->'sourceLineCount' += #methodLineCount;
+		self->'methodStats'->insert(#methodName = #methodStats);
+
+	/iterate;
+
+/define_tag;
+
+
+define_tag:'methodNames';
+	local('names') = array;
+	iterate:self->'methodStats',local('pair');
+		#names->insert(#pair->first);
+	/iterate;
+	return:#names;
+/define_tag;
+
+//============================================================================
+//
+//	->decomment
+//
+//	removes comments and empty lines
+//
+//............................................................................
+
+define_tag:'decomment',
+	-required = 'sourceText',	-type = 'array';
+		
+	loop: -loopfrom=#sourceText->size, -loopto=1, -loopincrement=(-1);
+		local:'sourceLine' = #sourceText->get(loop_count);
+		if: (#sourceLine == '') 
+			|| ((string_findregexp: 
+				#sourceLine,
+				-find='\\S+')->size == 0) 
+			|| (#sourceLine->(beginswith:'#'))
+			|| (#sourceLine->(beginswith:'//'));
+
+			#sourceText->remove(loop_count);
+		/if;
+	/loop;
+
+	return: #sourceText;
+
+/define_tag;
+
+/define_type;
+?>

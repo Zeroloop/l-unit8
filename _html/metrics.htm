@@ -1,0 +1,44 @@
+<div class="metrics">
+	<div class="testCase">
+		<div class="body">		
+			[self->table]	
+		</div>
+		<div class="footer">&nbsp;</div>
+	</div>
+	[iterate:self->testCases,local('testCase')]
+		[self->setTestCase(#testCase)]
+		<div class="testCase">
+			<div class="body hasHead">		
+			<h3>[#testCase]</h3>
+			
+			[self->table]
+				
+			[if:self->hasUntested]
+			<div class="testMethod">
+				<div class="body">		
+					<h4>Untested Methods</h4>
+					
+					[iterate:self->untestedMethods,local('methodName')]
+					
+						[local('methodInfo') = self->appMethodInfo(#methodName)]
+	
+						<div class="methodResult">
+							<table cellspacing=0>
+								<tr valign=top  class="crashed">
+									<td class="name">[#methodName]</td>
+									<td>[#methodInfo->Required]</td>
+									<td>[#methodInfo->Optional]</td>
+									<td class="time">[#methodInfo->LineCount]</td>
+								</tr>
+							</table>
+						</div>	
+					[/iterate]
+				</div>
+				<div class="footer">&nbsp;</div>
+			</div>
+			[/if]
+			</div>
+			<div class="footer">&nbsp;</div>
+		</div>
+	[/iterate]
+</div>

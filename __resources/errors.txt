@@ -1,0 +1,5 @@
+//	
+
+-2		Could not read source file: /testCases/test_shoppingBasket.ctyp	
+-9961	Please check that you have enabled the ctyp , ctag, dsp and lgc extensions in SiteAdmin > Site > File Extensions (Lasso Page Settings)
+

@@ -1,0 +1,19 @@
+[if:self->isRunning]
+<script>setTimeout(subForm,1000);</script>
+[/if]
+<form action="index.lasso?suiteName=[self->suiteName]" id="suiteForm" method="post">
+<input type="hidden" name="suiteTask" value="run"/>
+<input type="hidden" name="suiteMode" value="[self->mode]"/>
+<div class="contentHeader">
+	[if:self->isRunning]
+		<button type="submit" name="suiteTask" value="abort" class="large">Abort</button>
+	[else]
+		<button type="submit" name="suiteTask" value="start" class="large">Start</button>
+	[/if]
+	<button type="submit" name="suiteTask" value="metrics" class="large">Metrics</button>
+	<button type="submit" name="suiteTask" value="tasks" class="large">Tasks</button>
+	<button type="submit" name="suiteTask" value="restart" class="large">Reset</button>
+	<h1>[self->suiteName]</h1>
+</div>
+[self->content]
+</form>

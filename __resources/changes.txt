@@ -1,0 +1,47 @@
+Version 2.0
+//	GOALS
+
+Lower entry barrier. 
+-	Support for more syntax styles
+-	L-Unit setup feedback
+-	Configuration diagnostics
+-	Helpful runtime errors
+-	Basic tag test examples	
+- 	Remove the base class requirement
+
+More refined test control.
+Allow for direct types & locals in assertions
+
+Lay foundations for integration testing.
+-	Independent test threads.
+-	Asynchronous test threads.
+-	Debug stack integration.
+
+
+//	CHANGES
+
+Interface
+	-	Complete Redesign
+	-	Added full AJAX support
+	-	Specific test selection prior to run time
+	-	Full control of running tests 
+	-	Scan option for integrated test classes
+	
+Assertions
+	- 	Direct types can now be passed to assertions
+	-	The only limitations are strings - which should be wrapped in double quotes or via self->string('the string')
+
+TestCases
+	-	All testCase tests are now run in their own Lasso thread
+
+ClassAnalyser
+	-	Now works with both colon and bracket syntax styles
+
+Metrics
+	-	Returns information on method params
+	-	Updates in real(ish) time
+	
+
+	
+
+

@@ -1,0 +1,784 @@
+﻿<?LassoScript
+
+define_type:'testSuite', -prototype;
+
+	local(
+		'error'			= boolean,
+		'errorCode'	= integer,		
+
+		'suiteFileText'	= string,
+		'suiteName'	= string,
+		'suiteFiles'		= null,
+		'suiteStats'		= array,
+		'task'				= string,
+		'mode'			= 'tests',
+
+		'caseList'		= array,
+		'caseFiles'		= null,
+		
+		//	List of tests to run
+		'casesToRun'			= map,
+		
+		// Class outlines 
+		'testCaseOutline'	= array,
+		'classOutline'			= array,
+		
+		//	Populate running cases here
+		'testCases'		= null,
+		
+		//	HTML Output
+		'html'				= code(
+									'view' 		= unit_htmlPath'suite.htm',
+									'editor' 		= unit_htmlPath'suiteEditor.htm' 
+								),
+		
+		//	Set default text
+		'default_suiteFiletext' = '# enter test case names\r# to start new Suite file\r\r' 
+	);
+
+	
+//============================================================================
+//
+//	->onCreate
+//
+//............................................................................
+
+
+define_tag:'onCreate',
+	-optional = 'suiteName',
+	-optional = 'suiteFileText',
+	-optional = 'suiteTask';
+
+	debug:'TestSuite > OnCreate',-open,-title;
+	handle_error;debug(error_msg,-error);/handle_error;
+	handle;debug(-close);/handle;
+		
+	//	Core suite manager logic
+ 	client_Params >> 'suiteTask'
+ 	?	self->'task' = client_Param('suiteTask',client_Param('suiteTask',-count));
+
+ 	client_Params >> 'suiteMode'
+ 	?	self->'mode' = client_Param('suiteMode',client_Param('suiteMode',-count));
+
+ 	client_Params >> 'suiteFileText'
+ 	?	self->'suiteFileText' = client_Param('suiteFileText')
+ 	|	self->'suiteFileText' = self->'default_suiteFiletext';
+
+ 	client_Params >> 'suiteName' 
+ 	? self->'suiteName' = client_Param('suiteName');
+
+ 	client_Params >> 'suiteName' 
+ 	? self->'suiteName' = client_Param('suiteName');
+
+	//	Set testCases & testMethods to run
+	if:client_params >> 'suiteMethods';
+		iterate:client_param('suiteMethods')->split('\r'),local('suiteMethod');
+			local(
+				'testCase' = string(#suiteMethod)->split('->')->first->trim&,
+				'testMethod' = string(#suiteMethod)->split('->')->last->trim& 
+			);
+			
+			self->casesToRun !>> #testCase 
+			?	self->casesToRun->insert(#testCase=array(#testMethod))  
+			|	self->casesToRun->find(#testCase)->insert(#testMethod); 
+
+		/iterate;
+	/if;
+
+	select:self->'task';
+	
+		case:'add';
+			!	client_Param('testCaseFile') 
+			?	unit_controller->error('Error - please select a test case file from the list, then click Add.') 
+			|	self->addCase(
+					-caseFile = client_Param('testCaseFile')
+				);
+				
+		case:'edit';
+			!	self->suiteName
+			?	unit_controller->error('Error - no suite file name was provided to load.') 
+			|	self->loadFile(
+				-fileName 		= self->suiteName,
+				-fromFolder 	= unit_suitesPath
+			);
+			
+		case:'save';
+			!	self->suiteName
+			?	unit_controller->error('Error - please give the test suite a name.') 
+			|	self->saveFile(
+				-fileName 		= self->suiteName,
+				-fileContent 	= self->suiteFileText,
+				-toFolder 		= unit_suitesPath
+			);
+
+		case:'delete';
+			!	self->suiteName
+			?	unit_controller->error('Error - no suite file name was provided to delete.') 
+			|	self->deleteFile(
+					-fileName 		= self->suiteName,
+					-fromFolder 	= unit_suitesPath
+				);
+	
+		case:'reset';
+			self->resetEditor;
+
+		case:'restart';
+			 unit_controller->reset(self->'suiteName');
+			self->analyse;
+
+		case:'abort';
+			self->abort;
+			self->analyse;
+			
+		case:'view';
+			self->switchToRunning ? return:self;	
+			self->analyse;
+
+		case:'tasks';
+			self->switchToRunning
+			? (self->'mode' = 'tasks') + return(self);
+			self->'mode' = 'tasks';	
+			self->analyse;
+
+		case:'metrics';
+			self->switchToRunning
+			? (self->'mode' = 'metrics') + return(self);	
+			self->'mode' = 'metrics';	
+			self->analyse;
+
+		case:'run';
+			self->run;
+			
+		case:'start';
+			unit_controller->reset(self->'suiteName');
+			self->run;
+
+	/select;
+
+/define_tag;
+
+//============================================================================
+//
+//		->View Logic
+//
+//............................................................................
+
+define_tag:'onConvert';
+	local('content') = string;
+	
+	protect;
+		handle_error;
+			unit_controller->error(error_msg);
+		/handle_error;
+		
+		select:true;
+		 	case:'add,edit,new,reset,save' >> self->task;
+		 		return: process(self->html->editor);
+
+		 	case:'view,run,abort,start,restart,view,tasks,metrics' >> self->task;
+ 				return: process(self->html->view);
+	
+		/select;
+	/protect;
+
+/define_tag;
+
+
+//============================================================================
+//
+//		->Suite Content Output
+//
+//............................................................................
+
+define_tag:'content';
+
+	if:self->task == 'metrics'||self->mode == 'metrics';
+
+		return: unit_testMetrics(
+			-suiteName = self->suiteName,
+			-suiteStats = self->suiteStats,
+			-testResults = self->getTestCaseResults,
+			-testTimes = self->getTestCaseProcessTimes,
+		) + self->formInputs;
+	
+	else;
+
+		local('output') = string;
+	
+		iterate:self->testCaseOutline,local('testOutline');
+			local('testCaseName') = #testOutline->first;
+			self->testCases >> #testCaseName 
+			?	#output += self->testCases->find(#testCaseName)->view;
+		/iterate;
+		
+		return:#output;
+	/if;
+
+/define_tag;
+
+define_tag:'formInputs';
+	local(
+		'selected'=array,
+		'output' = string 
+	);
+	
+	iterate:self->testCases->values,local('testCase');
+		iterate:#testCase->methodSequence,local('methodName');
+			#testCase->isSelectedMethod(#methodName) ? #selected->insert(#testCase->type'->'#methodName);
+		/iterate;
+	/iterate;
+	
+	!	#selected->size
+	?	#selected->insert('all');
+	
+	iterate:#selected,local('value');
+		#output+='<input type="hidden" name="suiteMethods" value="'encode_html(#value)'">';
+	/iterate;
+	
+	return:#output;	
+
+/define_tag;
+
+//============================================================================
+//
+//		->saveFile
+//
+//............................................................................
+
+define_tag:'saveFile',
+	-required = 'fileName',		-type = 'string',
+	-required = 'fileContent',	-type = 'string',
+	-required = 'toFolder',		-type = 'string';
+
+	inline:
+		-username=unit_filesUser,
+		-password=unit_filesPswd;
+	
+		file_create: (#toFolder + #fileName), -fileoverwrite;
+
+		if: file_currentError( -errorcode) != 0;
+			self->error(file_currentError);
+		/if;		
+
+		file_write: (#toFolder + #fileName), #fileContent, -fileoverwrite;
+
+		if: file_currentError( -errorcode) != 0;
+			self->error(file_currentError);
+		/if;		
+
+	/inline;
+
+/define_tag;
+
+
+//============================================================================
+//
+//		->loadFile
+//
+//............................................................................
+
+define_tag:'loadFile',
+	-required = 'fileName',	-type = 'string',
+	-required = 'fromFolder',	-type = 'string';
+
+	(self->'suiteName') = #fileName;
+
+	inline:
+		-username=unit_filesUser,
+		-password=unit_filesPswd;
+
+		self->suiteName == 'scan'
+		?	return:	self->scan; 
+		
+		if: file_exists: (#fromFolder + #fileName);
+			(self->'suiteFileText') = string:file_read((#fromFolder + #fileName));
+			(self->'suiteFileText')->removeLeading( bom_utf8);
+			(self->'suiteFileText')->trim;
+			(self->'suiteFileText')->replace('\r\n','\r');
+			(self->'suiteFileText')->replace('\n', '\r');
+			(self->'suiteFileText') += '\r';
+			if: file_currentError( -errorcode) != 0;
+				self->error(file_currentError);
+			/if;		
+		else;
+			self->error('The file "' + (#fromFolder + #fileName) + '" could not be found, or could not be accessed.');
+		/if;
+	/inline;
+
+/define_tag;
+
+
+//============================================================================
+//
+//	->	deleteFile
+//
+//............................................................................
+
+define_tag:'deleteFile',
+	-required = 'fileName',	-type = 'string',
+	-required = 'fromFolder',	-type = 'string';
+
+	inline:
+		-username=unit_filesUser,
+		-password=unit_filesPswd;
+		
+		if: file_exists(#fromFolder + #fileName);
+			file_delete(#fromFolder + #fileName);
+			if: file_currentError( -errorcode) != 0;
+				self->error(file_currentError);
+			/if;		
+		else;
+			self->error('The file "' + (#fromFolder + #fileName) + '" could not be found, or could not be accessed.');
+		/if;
+	/inline;
+
+/define_tag;
+
+
+
+//============================================================================
+//
+//		->	scanFolder - Recursive folder scanner, searches for testCase files ("test_*.ctyp)
+//
+//............................................................................
+
+define_tag:'scanFolder',
+	-required = 'folder';
+	
+	//	Debug params for interest
+	debug:'scanFolder'=params;
+
+	local('results') = array;
+	iterate:file_listDirectory(#folder),local('file');
+		#file->endsWith('/') && #file !>> '.svn' 
+		?	#results->insertFrom(self->scanFolder(#folder + #file)->iterator)
+		|	#file->beginsWith('test_') 
+			?	#results->insert(#folder + #file);
+	/iterate;
+	return:#results;
+/define_tag;
+
+
+//============================================================================
+//
+//	->resetEditor
+//
+//............................................................................
+
+define_tag:'resetEditor';
+	self->'suiteFileText' = self->'default_suiteFiletext';
+	self->'suiteName' = string;
+/define_tag;
+
+
+//============================================================================
+//
+//	->addCase
+//
+//............................................................................
+
+define_tag:'addCase',
+	-required = 'caseFile', -type = 'string';
+
+	self->'suiteFileText' += #caseFile;
+	self->'suiteFileText' += '\r';
+
+/define_tag;
+
+//============================================================================
+//
+//		->	caseFiles - returns all potential case files
+//
+//............................................................................
+
+
+define_tag:'caseFiles';
+
+	if:self->'caseFiles'->type == 'null';
+
+		self->'caseFiles' = array;
+
+		inline:
+			-username 	= unit_filesUser,
+			-password 		= unit_filesPswd;
+		
+			local('testCaseFiles') = array;
+			self->'caseFiles'->insertFrom(self->scanFolder(unit_casesPath)->iterator);
+			self->'caseFiles'->insertFrom(self->scanFolder(unit_appPath)->iterator);
+		
+		/inline;
+		
+	/if;
+	
+	return:self->'caseFiles';
+
+/define_tag;
+
+//============================================================================
+//
+//	->getTestCases - extracts test cases from suiteFileText
+//
+//............................................................................
+
+define_tag:'getTestCases';
+
+	if: !(self->'caseList');
+		local:
+			'caseList' 	= self->'suiteFileText',
+			'caseLine'	= string,
+			'thisCase'	= string;
+	
+		#caseList->trim;
+		#caseList->replace('\r\n','\r');
+		#caseList->replace('\n', '\r');
+		#caseList = #caseList->split:'\r';
+	
+		// decomment the file, leaving only exectable lines
+		if: #caseList->type == 'array';
+			loop: -from=#caseList->size, -to=1, -by=(-1);
+				#caseLine = #caseList->get(loop_count);
+				#caseLine->trim;
+				if: (#caseLine == '') 
+					|| (string_findregexp( 
+						#caseLine,
+						-find='\\S+')->size == 0) 
+					|| (#caseLine->beginsWith('#')) 
+					|| (#caseLine->beginsWith('//'));
+		
+					#caseList->remove(loop_count);
+				/if;
+			/loop;
+		/if;
+	
+		(self->'caseList') = #caseList;
+	/if;
+
+	return: (self->'caseList');
+
+/define_tag;
+
+
+//
+//		->	testCaseFiles - Returns absolute path to testCases
+//
+//............................................................................
+
+
+define_tag:'getTestCaseFiles';
+	debug:'TestSuite > testCaseFiles',-open,-title;
+	handle_error;debug(error_msg,-error);/handle_error;
+	handle;debug(-close);/handle;
+
+	local('testCaseFiles') = array;
+	
+	iterate:self->getTestCases,local('testCaseFile');
+		//	Set filename & path
+		!	#testCaseFile->beginsWith('/')
+		?	#testCaseFile = unit_casesPath + #testCaseFile;
+		
+		#testCaseFiles->insert(#testCaseFile);
+	/iterate;
+	
+	return:@#testCaseFiles;
+
+/define_tag;
+
+
+//============================================================================
+//
+//		->	getTestCaseResults
+//
+//............................................................................
+
+define_tag:'getTestCaseResults';
+	debug:'getTestCaseResults',-open,-title;
+	handle_error;debug(error_msg,-error);/handle_error;
+	handle;debug(-close);/handle;
+
+	local('results')	= map;
+
+	iterate:self->testCases->values,local('testCase');
+		#results->insert(#testCase->type=#testCase->'methodResults');
+	/iterate;
+	
+	return:@#results;
+	
+/define_tag;
+
+//============================================================================
+//
+//		->	getTestCaseProcessTimes
+//
+//............................................................................
+
+define_tag:'getTestCaseProcessTimes';
+	debug:'getTestCaseProcessTimes',-open,-title;
+	handle_error;debug(error_msg,-error);/handle_error;
+	handle;debug(-close);/handle;
+
+	local('results')	= map;
+	iterate:self->testCases->values,local('testCase');
+		#results->insert(#testCase->type=#testCase->getProcessTime);
+	/iterate;
+	
+	return:@#results;
+	
+/define_tag;
+
+
+//============================================================================
+//
+//		->	scan - sets source text by scanning for test cases
+//
+//............................................................................
+
+
+define_tag:'scan';
+	local('testCaseFiles') = array;
+	
+	inline:
+		-username 	= unit_filesUser,
+		-password 		= unit_filesPswd;
+			
+		#testCaseFiles->insertFrom(self->scanFolder(unit_casesPath)->iterator);
+		#testCaseFiles->insertFrom(self->scanFolder(unit_appPath)->iterator);
+		
+	/inline;
+	
+	//	Debug results for interest
+	debug:'#testCaseFiles'=#testCaseFiles;
+	
+	 self->'suiteFileText' = string(#testCaseFiles->join('\r'));
+/define_tag;
+
+
+//============================================================================
+//
+//		->	analyse - source file analysis, preps for -> run
+//
+//............................................................................
+
+define_tag:'analyse';
+
+	self->loadFile(
+					-fileName 		= self->suiteName,
+					-fromFolder 	= unit_suitesPath
+				);
+
+	debug:'testSuite > Analyse',-open,-title;
+	handle_error;debug(error_msg,-error);/handle_error;
+	handle;debug(-close);/handle;
+
+	//	Loads and caches testCase objects
+	! 	self->'testCases'->type == 'null'
+	?	return:@self->'testCases';
+
+	local(
+		'ClassAnalyser' 		= unit_classAnalyser,
+		'testCases'				= map,
+		'testClassName'		= string,
+		'testClassMethods'	= array,
+		'methodsToTest'		= array,
+	);
+
+	iterate:self->getTestCaseFiles, local('testCaseFile');
+
+		protect;
+			handle;
+					//	Detach important locals
+					#ClassAnalyser = unit_classAnalyser;
+					#testCaseObject->detachReference;
+					#methodsToTest->detachReference;
+					#testClassName 		= string;
+					#testClassMethods 	= array;
+					
+					
+					//	Provide useful feedback when there's a problem with analysis
+					error_code
+					?	unit_controller->error(#testCaseFile' - Analyse: 'error_msg);
+			/handle;
+
+			//	Analyse testCase
+			#classAnalyser->analyzeClass(-file=#testCaseFile,-forTestClass);
+			#testClassName 		= #classAnalyser->className;
+			#testClassMethods 	= #classAnalyser->methodNames;
+			
+			//	Methods to test
+			self->casesToRun >> #testClassName 
+			? #methodsToTest = self->casesToRun->find(#testClassName)
+			| #methodsToTest = array;
+			
+			//	Save testCase outline
+			self->'testCaseOutline'->insert(
+				#testClassName = #testClassMethods 
+			);
+			
+			debug->open('testClassName'=#testClassName,-title);
+
+			protect;
+			
+				//	Provide useful feedback when there's a problem with testcase
+				handle_error;
+					unit_controller->error(#testCaseFile': 'error_msg);
+				/handle_error;
+
+				//	Define testCase
+				library(#testCaseFile);
+				
+				//	Initialise testCase
+				local('testCaseObject') = (\#testClassName)->asType(
+																						-params=array(
+																										-classPath = unit_appPath,
+																										-methodSequence = #testClassMethods,
+																										-methodsToTest = #methodsToTest,
+																									)
+																						);
+			/protect;
+			
+			//	Store testCase internally
+			#testCases->insert(#testClassName=#testCaseObject);
+			
+			
+			//	Analyse testClass
+			#testCaseObject->getClass 
+			?	#ClassAnalyser->analyzeClass(-file=#testCaseObject->getClass);
+			
+			//	Debug stats to user
+			debug:'Analysed '#testClassName' > Stats',-title,-open;
+			debug:#ClassAnalyser->getStats;
+			debug:-close;
+			
+			//	Save stats
+			self->'suiteStats'->insert(#ClassAnalyser->getStats);
+	
+			//	Save testClass outline
+			self->'classOutline'->insert(
+				#classAnalyser->className = #ClassAnalyser->methodNames,
+			);
+			
+			
+		/protect;		
+
+	/iterate;
+
+	self->'testCases' = @#testCases;
+	
+/define_tag;
+
+define_tag:'start';
+	unit_controller->start(@self);
+/define_tag;
+
+//============================================================================
+//
+//		->	run - launches testCases
+//
+//............................................................................
+
+
+define_tag:'run';
+
+	debug:'TestSuite > Run',-open,-title;
+	handle_error;debug(error_msg,-error);/handle_error;
+	handle;debug(-close);/handle;
+
+	self->switchToRunning ? return;	
+
+	self->loadFile(
+		-fileName 		= self->suiteName,
+		-fromFolder 	= unit_suitesPath
+	);
+
+	self->start;
+	self->analyse;
+
+	local:
+		'testCase'					= string,
+		'testCaseFile'				= string,
+		
+		'caseClassName'		= string,
+		'testCaseObj'				= string,
+		'sourceCodeStats'		= string,
+		'caseClassName'		= string;
+
+	iterate:self->testCaseOutline, local('testCaseOutline');
+		
+		local('testCaseObject') = @self->testCases->find(#testCaseOutline->first);
+		
+		#testCaseObject->type == 'null'
+		?	loop_continue;
+
+		//	Run testCase object
+		#testCaseObject->run;
+		#testCaseObject->detachReference;
+		
+
+	/iterate;
+
+	sleep:250;
+
+/define_tag;
+
+//============================================================================
+//
+//		->	abort - stops all running tests
+//
+//............................................................................
+
+define_tag:'abort';
+//	protect;
+		iterate:self->testCases->keys,local('testCase');
+			#testCase->abort;
+		/iterate;
+//	/protect;
+/define_tag;
+
+//============================================================================
+//
+//		->	switchToRunning - switches to any running instances of the testSuite (returns true if it does)
+//
+//............................................................................
+
+define_tag:'switchToRunning';
+	if:unit_controller->exists(self->suiteName);
+		self = @unit_controller->get(self->suiteName);
+		return:true;
+	/if;
+	return:false;
+/define_tag;
+
+//============================================================================
+//
+//		->	isRunning - checks if current suite is still running / being processed
+//
+//............................................................................
+
+define_tag:'isRunning';
+
+	//	One check per page load
+	var_defined('_isRunning_'self->type)
+	?	return:var('_isRunning_'self->type);
+		
+	//	Ask test cases
+	iterate:self->testCases->values,local('testCase');
+		#testCase->isRunning ? return(var('_isRunning_'self->type):=true);
+	/iterate;
+	return(var('_isRunning_'self->type):=false);
+/define_tag;
+
+
+//============================================================================
+//
+//		->	error - Passes any errors to unit_controller
+//
+//............................................................................
+
+define_tag:'error',
+	-required = 'error', -type= 'string';
+	
+	unit_controller->error(#error);
+
+/define_tag;
+
+/define_type;
+?>

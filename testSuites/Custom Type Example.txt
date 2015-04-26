@@ -1,0 +1,3 @@
+# enter test case names
+# to start new Suite file
+test_shoppingBasket.ctyp

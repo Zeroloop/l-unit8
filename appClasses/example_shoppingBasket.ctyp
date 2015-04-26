@@ -1,0 +1,85 @@
+﻿<?lassoscript
+//=============================================================================
+//
+// example of testCase code
+//
+//.............................................................................
+
+define_type('shoppingBasket');
+
+	local:
+		'lineItems'	= array;
+
+
+//============================================================================
+//
+//	->addItem
+//
+//............................................................................
+
+define_tag:'addItem',
+	-required = 'sku',			-type = 'string',
+	-required = 'description',	-type = 'string',
+	-required = 'price',		-type = 'decimal';
+
+	(self->'lineItems')->(insert: 
+		#sku = (map:
+				'description' 	= #description,
+				'price' 		= #price,
+				'timestamp' 	= (date: date, -format='%Q %T')));
+
+/define_tag;
+
+
+//============================================================================
+//
+//	->deleteItem
+//
+//............................................................................
+
+define_tag:'deleteItem',
+	-required = 'sku',	-type = 'string';
+
+	local:'indx' = ((self->'lineItems')->findPosition:#sku)->last;
+	(self->'lineItems')->(remove: #indx);
+
+/define_tag;
+
+
+//============================================================================
+//
+//	->tagThatFails
+//
+//............................................................................
+
+define_tag:'tagThatFails',
+	-required = 'sku',	-type = 'string';
+
+	(self->'lineItems')->(eliminate: 1);
+
+/define_tag;
+
+//============================================================================
+//
+//	->unTestedTag
+//
+//............................................................................
+
+define_tag:'unTestedTag',
+	-required = 'sku',	-type = 'string',
+	-optional = 'qty',-type='integer';
+
+	(self->'lineItems')->(eliminate: 1);
+
+/define_tag;
+
+
+//============================================================================
+//	->size
+
+define_tag:'size';
+	return: (self->'lineItems')->size;
+/define_tag;
+
+/define_type;
+?>

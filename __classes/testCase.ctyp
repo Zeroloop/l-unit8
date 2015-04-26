@@ -1,0 +1,584 @@
+﻿<?Lassoscript
+
+define_type:'testCase', 'unit_assertions',-priority='replace',-prototype; 
+
+	local:
+		'testCaseResults'			= map,
+		'displayedResults'			= array,
+		'methodResults'				= map,
+		'methodSequence' 			= array,
+		'methodsToTest' 			= array,
+		'currentTagName' 			= string,
+		'classPath'						= string,
+		'classStats'						= map,
+		'revolver'						= null,
+		'html'				= code(
+									'view' = unit_htmlPath'testCase.htm' 
+								);
+	local:
+		'caseStartTime'	= integer,
+		'caseTotalTime'	= -1,
+		'taskMessage' 	= string,
+		'taskPassed'		= false,
+		'taskStartTime'	= integer;
+		
+	local:
+		'baseTags'	=	array(
+								'init',
+								'getClass',
+								'unknownTag',
+								'clearTask',
+								'storeResult',
+								'getResults',
+								'setup',
+								'teardown',
+								'run',
+								'createDatabase',
+								'removeDatabase',
+								'executeSQL',
+								'addRecord',
+							);
+		
+define_tag:'onCreate',
+	-optional='classPath',	-type='string',
+	-optional='methodSequence',-type='array',
+	-optional='methodsToTest',-type='array';
+	
+	if:self->type != 'testCase';
+		debug:self->type' > onCreate',-open,-title;
+		handle_error;debug(error_msg,-error);/handle_error;
+		handle;debug(-close);/handle;
+	/if;
+
+	self->'classPath' = #classPath;
+	
+	local('methodSequence')->isA('array')
+	?	self->'methodSequence' = #methodSequence;
+
+	local('methodsToTest')->isA('array')
+	?	self->'methodsToTest' = #methodsToTest;
+	
+/define_tag;
+
+//=============================================================================
+//
+//	->view - outputs HTML
+//
+
+define_tag:'view';
+	debug:self->type' > view',-open,-title;
+	handle_error;debug(error_msg,-error);/handle_error;
+	handle;debug(-close);/handle;
+	return:process(self->html->view);
+/define_tag;
+
+//=============================================================================
+//
+//	->taskResult Type
+//
+
+define_type:'taskResult','map',-prototype;
+	define_tag:'onCreate',-optional='map';
+		self->parent->removeAll;
+		self->parent->insertFrom((local('map')->isA('map')?#map|locals)->iterator);
+	/define_tag;
+	define_tag:'_unknownTag';
+		return:@self->parent->find(tag_name);
+	/define_tag;
+	
+	define_tag:'cssClass';
+		select:self->result;
+			case:'true';
+				return:'passed';
+			case:'false';
+				return:'failed';
+			case:'null';
+				return:'crashed';
+			case:'waiting';
+				return:'waiting';
+			case;
+				return:'crashed';
+		/select;
+	/define_tag;
+	
+/define_type;
+
+//=============================================================================
+//
+//	->methodResults
+//
+
+define_tag:'methodResults',-optional='methodName';
+	debug->open('TestCase > MethodResults');
+	handle;debug->close(-withErrors);/handle;
+
+	local('methodResults') = array;
+		
+	!	self->'methodResults'->size
+	?	return:array;
+
+	if:local('methodName') && self->'methodResults' >> local('methodName');
+		iterate:self->'methodResults'->find(#methodName),local('TaskResults');
+				#methodResults->insert(@#TaskResults->second);
+		/iterate;
+		
+		return:#methodResults;		
+		
+	else:local('methodName');
+		return:array;
+	/if;	
+	
+	iterate:self->methodSequence,local('caseMethodName');
+		self->methodsToTest !>> #methodName ? loop_continue;
+		
+		iterate:self->'methodResults'->find(#methodName),local('pair');
+			#methodResults->insert(@#pair->second);
+		/iterate;
+
+	/iterate;
+	
+	return:@#methodResults;
+	
+/define_tag;
+
+//=============================================================================
+//
+//	->queuedMethods
+//
+
+define_tag:'queuedMethods';
+	local('queuedMethods') = array;
+		
+	iterate: self->methodSequence, local('methodName');
+		(self->methodsToTest !>> #methodName && self->methodsToTest->size)
+		||	self->'methodResults' >> #methodName  
+		?	loop_continue;
+		
+		#queuedMethods->insert(#methodName);
+		
+	/iterate;
+		
+	return:@#queuedMethods;
+	
+/define_tag;
+
+		
+//=============================================================================
+//
+//	->init
+//
+
+define_tag:'init',
+	-required = 'classPath', -type = 'string';
+
+	self->'classPath' = #classPath;
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->unknownTag
+//
+
+define_tag:'unknownTag';
+	//	to be completed
+	//	trap the call to an unknown tag or property and log it
+/define_tag;
+
+
+//=============================================================================
+//
+//	->startTask
+//
+
+define_tag:'startTask';
+	self->'taskMessage'		= string;
+	self->'taskPassed'		= false;
+	self->'taskStartTime'	= _date_msec;
+/define_tag;
+
+
+//=============================================================================
+//
+//	->endTask
+//
+
+define_tag:'endTask';
+	return: _date_msec - (self->'taskStartTime');
+/define_tag;
+
+
+define_type:'arrayMap','array',-prototype;
+	define_tag:'values';
+		local('values')=array;
+		iterate:self->parent,local('pair');
+			#pair->isA('pair')
+			? 	#values->insert(@#pair->second)
+			|	#values->insert(null);
+		/iterate;
+	/define_tag;
+	define_tag:'keys';
+		local('values')=array;
+		iterate:self->parent,local('pair');
+			#pair->isA('pair')
+			? 	#values->insert(@#pair->first)
+			|	#values->insert(null);
+		/iterate;
+	/define_tag;
+/define_type;
+
+
+//=============================================================================
+//
+//	->storeResult
+//
+//	takes the result of assertions or custom test tasks
+//	and adds it to an array to be picked up by the testSuite
+//
+//	this method overloads the one defined in unit_assertions
+//	which allows unot_assertions to be used independently,
+//	and allows the assert results and custom test results to automatically 
+//	be stored in order when assertions are used in a testCase
+//	
+
+define_tag:'storeResult',
+	-optional = 'resultData';
+	
+	debug('storeResult',-open,-title);
+	debug:params;
+	handle;debug(-close,-anyErrors);/handle;
+
+	if:local_defined('name');
+		local('resultData'=locals);
+	else;
+		local('name') = #resultData->find('name');
+	/if;
+
+	local('methodName') = self->'currentTagName';
+	
+	self->'methodResults' !>> #methodName 
+	?	self->'methodResults'->insert(#methodName = array(#name = self->taskResult(#resultData)))
+	|	self->'methodResults'->find(#methodName)->insert(#name = self->taskResult(#resultData));
+
+/define_tag;
+
+//=============================================================================
+//
+//	->getResults
+//
+//	
+
+define_tag:'getResults';
+	return: (self->'methodResults');
+/define_tag;
+
+define_tag:'getProcessTime';
+	!	self->'caseStartTime'
+	?	return:0.00;
+	
+	self->'caseTotalTime' != -1 
+	?	return: self->'caseTotalTime'  
+	|	return: (date_MSec - self->'caseStartTime');
+/define_tag;
+
+
+define_tag:'getMethodResult',
+	-optional 	= 'method',
+	-optional 		= 'key';
+	
+	local('results') = self->getResults;
+	
+	#results >> #method 
+	? return: #results->find(#method);
+	
+/define_tag;
+
+//=============================================================================
+//	->setup stub
+define_tag:'setup';
+/define_tag;
+
+//=============================================================================
+//	->teardown stub
+define_tag:'teardown';
+/define_tag;
+
+//=============================================================================
+//	->getClass stub
+define_tag:'getClass';
+	return:string;
+/define_tag;
+
+//============================================================================
+//	->createDatabase
+
+define_tag:'createDatabase',
+	-required = 'host',			-type = 'string',
+	-required = 'database',	-type = 'string';
+
+	admin_createDatabase(
+		-host 			= #host,
+		-database 		= 'LUnit_'#database,
+		-alias 			= #database 
+	);
+	
+/define_tag;
+
+//============================================================================
+//	->removeDatabase
+
+define_tag:'removeDatabase',
+	-required = 'host',			-type = 'string',
+	-required = 'database',	-type = 'string';
+
+	admin_removeDatabase(
+		-host 			= #host,
+		-database 		= 'LUnit_'#database 
+	);
+	
+/define_tag;
+
+//============================================================================
+//	->executeSQL
+
+define_tag:'executeSQL',
+	-required = 'database',	-type = 'string',
+	-required = 'sql',			-type = 'string';
+	
+	debug: 'executeSQL', -title;
+	debug: locals;
+		
+	handle_error;
+		debug: 'error: 'error_message;
+	/handle_error;
+
+	inline: 
+		-database 	= #database,
+		-sql 			= #sql;
+		
+		return:error_code == 0;
+		
+	/inline;
+
+/define_tag;
+
+//============================================================================
+//	->addRecord
+
+define_tag:'addRecord',
+	-required = 'database',	-type = 'string',
+	-required = 'table',			-type = 'string',
+	-required = 'keyfield', 	-type = 'string',
+	-optional  = 'host',			-type = 'array';
+
+	local:'params' = array;
+	
+	iterate:params,local('param');
+	
+		if:#param->isA('pair');
+		
+			!	#param->first->beginsWith('-')
+			?	#params->insert(#param);
+			
+		/if;
+		
+	/iterate;
+
+	inline: 
+		-database 	= #database,
+		-table 		= #table,
+		#params,
+		-keyfield 	= #keyfield,
+		-add;
+		
+		return:error_code == 0;
+		
+	/inline;
+	
+/define_tag;
+
+
+define_tag:'testTags';
+	local('testTags') = self->properties->second;
+	iterate:self->baseTags,local('tag');
+		#testTags->remove(#tag);
+	/iterate;
+	return:#testTags;
+/define_tag;
+
+//=============================================================================
+//
+//	->run
+//
+//	introspectively identifies all methods of the instantiated type
+//	and executes each method one by one
+//
+//	
+
+
+
+define_tag:'run',
+	-optional = 'tagName';
+	
+	debug:self->type' > Run',-open,-title;
+	handle_error;debug(error_msg,-error);/handle_error;
+	handle;debug(-close);/handle;	
+
+	if: local_defined:'tagName';
+		(#tagName->beginsWith:'test_')
+			? #results->(insert: (#memberTags->find:#tagName)->invoke);
+	else;
+
+		//	All tests run within independent threads via revolver
+		local('revolver') =  revolver(
+										-name 			= self->type,
+										-username 	= unit_filesUser,
+										-password 		= unit_filesPswd,
+										-basePath 		= unit_localPath, 
+										-timeout 		= 60000, 
+									);
+									
+		self->'revolver' = @local('revolver');
+		self->'caseStartTime' = date_mSec;
+		
+		//	Code to execute per test
+	
+		local('execute') = {
+			
+			debug:self->type' > Execute',-open,-title;
+			debug:'tagName' = local('tagName');
+			handle_error;debug(error_msg,-error);/handle_error;
+			handle;debug(-close);/handle;
+
+					
+			protect;
+				handle_error;
+					self->storeResult(
+						-name 		= 'setup',
+						-result 		= false,
+						-message 	= self->type'->setup: 'error_currentError,
+						-time 		= 0 
+					);
+					// TODO Abort current test...
+				/handle_error;
+					
+				self->setup;
+			/protect;
+			
+			protect;
+				handle_error;
+					self->storeResult(
+						-name 		= #tagName,
+						-result 		= null,
+						-message 	= error_msg,
+						-time 		= _date_msec - #tagStart 
+					);
+				/handle_error;
+
+				self->'currentTagName' = #tagName;
+
+				local('tagStart') = _date_msec;				
+				#tag->run(-owner=self);
+
+			/protect;
+			
+			protect;
+				handle_error;
+					self->storeResult(
+						-name 		= 'teardown',
+						-result 		= false,
+						-message 	= self->type'->teardown: 'error_currentError,
+						-time 		= 0 
+					);
+					
+					// TODO Abort current test...
+				/handle_error;
+
+				self->teardown;
+
+			/protect;			
+		};
+		
+		
+		debug:'self->methodSequence'=self->methodSequence;
+		debug:'self->methodsToTest'=self->methodsToTest;
+
+		iterate: self->methodSequence, local('tagName');
+		
+			self->methodsToTest !>> #tagName 
+			?	loop_continue;
+			
+			#revolver->load(
+				-name 	= #tagName,		
+				-task 	= #execute,
+				-params= array(		
+									-tag 			= self->properties->second->find(#tagName),
+									-tagname 	= #tagName 
+								),
+				-owner 	= @self, 
+			);
+			
+			sleep:50;
+	
+		/iterate;
+
+		#revolver->load(
+			-task 	= {
+								self->'currentTagName' = string;
+								self->'caseTotalTime' = (date_mSec - self->'caseStartTime');
+								
+							},
+			-owner 	= @self, 
+		);
+		
+		#revolver->fire(
+			-async = unit_isAjax,
+			-asyncThreads = unit_isAjax,
+			-queueThreads 	
+		);
+		
+	/if;
+
+/define_tag;
+
+define_tag:'abort';
+	protect;
+		self->revolver->abort;
+	/protect;
+/define_tag;
+
+define_tag:'isSelectedCase';
+	return:self->'methodsToTest'->size > 0;
+/define_tag;
+
+define_tag:'isCurrentMethod',-optional='methodName';
+	return:self->'currentTagName' == local('methodName');
+/define_tag;
+
+define_tag:'isSelectedMethod',-optional='methodName';
+	return:self->'methodsToTest' >> local('methodName');
+/define_tag;
+
+define_tag:'hasDisplayed',-optional='methodName',-optional='ResultName';
+	self->displayedResults >> #methodName'->'#resultName
+	?	return:true;
+
+	self->displayedResults->insert(#methodName'->'#resultName);
+	return:false;
+/define_tag;
+
+
+
+define_tag:'isRunning';
+	self->revolver->isA('null') 
+	? 	return(false)
+	|	return(self->revolver->isRunning == true);
+/define_tag;
+
+define_tag:'isComplete';
+	return:!self->revolver ? false || self->revolver->isComplete == false;
+/define_tag;
+
+/define_type;
+?>

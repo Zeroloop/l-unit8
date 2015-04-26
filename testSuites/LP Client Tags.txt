@@ -1,0 +1,4 @@
+# enter test case names
+# to start new Suite file
+
+/appClasses/lp/test_lp_client_browser.lasso

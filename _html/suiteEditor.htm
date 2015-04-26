@@ -1,0 +1,33 @@
+﻿<form id="suiteEditor" action="/index.lasso" method="post">
+
+<div class="contentHeader">
+	<button type="submit" name="suiteTask" value="save" class="large">Save</button>
+	<button type="submit" name="suiteTask" value="close" class="large">Close</button>
+	<button type="submit" name="suiteTask" value="reset" class="large">Reset</button>
+	<h1>Suite Editor</h1>
+</div>
+
+<div class="content">
+	<div class="body">
+
+		<div class="col1">
+			<label>
+				<input type="text" name="suiteName" value="[self->suiteName]" size="26" />
+				Suite File Name:
+			</label>
+			<textarea name="suiteFileText" rows="12" cols="58">[self->suiteFileText]</textarea>
+		</div>				
+		<div class="col2">
+			<button type="submit" name="suiteTask" value="add" class="medium">Add</button>
+			<h2>Test Cases</h2>
+			<select name="testCaseFile" size="14">
+				[iterate:self->caseFiles,local('filename')]
+					<option value="[#filename]">[#filename]</option>
+				[/iterate]
+			</select>
+		</div>
+		
+	</div>
+	<div class="footer">&nbsp;</div>
+</div>
+</form>	

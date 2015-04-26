@@ -1,0 +1,592 @@
+*{
+	margin:0;
+	border:none;
+	outline: none;
+}
+body{
+	font-size:11px;
+	font-family:Verdana,"Trebuchet MS",Arial,Sans-serif;
+	font-family:"Trebuchet MS",Verdana,Arial,Sans-serif;
+	background-color: #bebfb1;
+	background-image:url(/_img/body_bg.png);
+	background-position:top center;
+	background-repeat:repeat-x;	
+}
+
+h1,h2,h3,h4{
+}
+
+a.large,
+button.large{
+	display:block;
+	color:#000 !important;
+	font-size:12px;
+	line-height:22px;
+	text-align:center;
+	text-decoration:none;
+	text-transform:uppercase;
+	background-image:url(/_img/btn_lrg.png);
+	background-position:-73px 0;
+	background-repeat:no-repeat;	
+	width:69px;
+	height:27px;
+	outline: none;
+}
+a.large:hover,
+button.large:hover{
+	background-position:-147px 0;
+}
+a.large:focus,
+button.large:focus{
+	outline: none;
+	background-position:-220px 0;
+}
+button.large{
+	line-height:18px;
+	padding-bottom:10px;
+}
+a.medium,
+button.medium{
+	display:block;
+	color:#000 !important;
+	font-size:12px;
+	line-height:22px;
+	text-align:center;
+	text-decoration:none;
+	text-transform:uppercase;
+	background-image:url(/_img/btn_med.png);
+	background-position:0 0;
+	background-repeat:no-repeat;	
+	width:45px;
+	height:24px;
+}
+a.medium:hover,
+button.medium:hover{
+	background-position:-51px 0;
+}
+a.medium:focus,
+button.medium:focus{
+	background-position:-101px 0;
+}
+button.medium{
+	line-height:18px;
+	padding-bottom:10px;
+}
+
+a.small{
+	display:block;
+	color:#000 !important;
+	font-size:9px;
+	width:29px;
+	height:16px;
+	line-height:155%;
+	text-align:center;
+	text-decoration:none;
+	text-transform:uppercase;
+	background-image:url(/_img/btn_sml.png);
+	background-position:0 0;
+	background-repeat:no-repeat;	
+}
+a.small:hover{
+	background-position:-32px 0;
+}
+
+a.small:focus{
+	background-position:-64px 0;
+}
+
+a.logo{
+	display:block;
+	height:105px;
+}
+a.logo img{
+	margin:20px 0 0 14px;
+}
+
+#host{
+	width:940px;
+	margin:40px auto 20px auto;
+	background:#eff0d7;
+	background-image:url(/_img/host_bg.png);
+	background-position:top center;
+	background-repeat:repeat-x;	
+	min-height:300px;
+}
+#left{
+	width:250px;
+	float:left;
+}
+
+#main{
+	width:680px;
+	margin-left:10px;
+	float:left;
+	display:inline;
+	min-height:320px;
+}
+#errors{
+	color:#A00;
+	float:left;
+	margin-bottom:12px;
+	line-height:200%;
+	margin:14px;
+}
+
+#footer{
+	color:#555555;
+	background-color:#e7e8d1;	
+	background-image:url(/_img/body_ftr.png);
+	background-position:top center;
+	background-repeat:repeat-x;
+	line-height:17px;	
+	height:52px;
+	clear:both;
+	margin-top:2px;
+}
+
+#footer a{
+	color:#555555 !important;
+}
+
+#footer div.col2{
+	float:right;
+	text-align:right;
+	margin:8px 15px 0 0;
+}
+#footer div.col1{
+	float:left;
+	margin:8px 0 0 15px;
+}
+/*	HEADER LINKS	*/
+
+#headerLinks{
+	height:27px;
+	margin-top:-23px;
+	margin-bottom:-4px;
+	float:right;
+	margin-right:15px;
+}
+#headerLinks a{
+	color:#9a9292;
+	text-decoration:none;
+	font-size:14px;
+	font-weight:bold;
+	height:27px;
+	margin-left:6px;
+	line-height:22px;
+	float:right;
+	display:inline;
+}
+
+#headerLinks a span{
+	display:block;
+	height:27px;
+	padding:0 0px 0 10px;
+}
+
+#headerLinks a.active{
+	background-image:url(/_img/header_linkA.png);
+	background-position:left top;
+	background-repeat:no-repeat;
+	color:#696969;
+}
+#headerLinks a.active span{
+	color:#696969;
+	padding:0 10px 0 10px;
+	background-image:url(/_img/header_linkB.png);
+	background-position:right top;
+	background-repeat:no-repeat;
+}
+
+
+/*	CONTENT HEADER	*/
+
+div.contentHeader{
+	margin-top:62px;
+	margin-bottom:13px;
+	margin-right:15px;
+}
+div.contentHeader button,
+div.contentHeader a{
+	float:right;
+	margin-left:4px;
+}
+div.contentHeader h1{
+	text-transform:uppercase;
+	font-weight:normal;
+	font-size:24px;
+	line-height:24px;
+	margin-left:15px;
+}
+
+
+/* 	CONTENT BODY */
+
+div.content{
+	width:665px;
+	background-image:url(/_img/content_bg.png);
+	background-repeat:repeat-y;
+	margin-bottom:8px;
+}
+
+div.content div.body{
+	background-image:url(/_img/content_hdr.png);
+	background-position:top center;
+	background-repeat:no-repeat;
+}
+div.content div.footer{
+	background-image:url(/_img/content_ftr.png);
+	background-position:top center;
+	background-repeat:no-repeat;
+	height:9px;
+	font-size:9px;
+	line-height:9px;
+}
+div.content div.body div.docs{
+	margin:10px 10px 10px 12px;
+	padding:8px;
+	background:#FFF;
+	border:1px solid #CCC;
+	width:624px;
+}
+div.content div.body div.docs hr.pb{
+	border-top:1px solid #CCC;
+	margin:40px 0 40px 0;
+}
+div.content div.body div.docs #google_footer,
+div.content div.body div.docs #google-view-footer{
+	display:none;	
+}
+div.content div.body h5{
+	margin:14px 14px 10px 16px;
+	font-size:16px;
+	font-weight:normal;
+	color:#666;
+	float:left;
+	clear:both;
+	display:inline;
+	width:90%;
+}
+
+div.content div.body h4{
+	color:#8fa98f;
+	margin:14px 14px 10px 16px;
+	font-size:16px;
+	font-weight:bold;
+	float:left;
+	clear:both;
+	display:inline;
+}
+div.content div.body p{
+	clear:both;
+	display:block;
+	width:90%;
+	margin:0px 14px 14px 16px;
+	line-height:150%;
+}
+div.content div.body p it{
+	display:block;
+	margin-top:8px;
+	color:#444;	
+}
+
+/* 	CONTENT SPECIFICS	*/
+
+img.girl{
+	float:right;
+	margin-left:-155px;
+	margin-top:75px;
+	position:absolute;
+	text-align:right;
+}
+
+div.padRight ul,
+div.padRight h3,
+div.padRight p{
+	width:470px !important;
+}
+
+i.footNote{
+	font-size:10px;
+	color:#AAA;
+}
+
+/*	SUITE LIST */
+
+div.suiteList{
+	padding:0 0 0 8px;
+}
+
+div.suiteList div.header{
+	padding:12px 1px 16px 14px;
+	border-bottom:1px solid #CCC;
+}
+div.suiteList div.header h2{
+	font-size:18px;
+	height:18px;
+	line-height:22px;
+	font-weight:normal;
+	text-transform:uppercase;
+}
+div.suiteList div.header h2 a{
+	float:none;
+	margin:0;
+	text-decoration:none;
+	color:#000;
+}
+
+div.suiteList div.header a{
+	float:right;
+	margin-left:4px;
+}
+
+div.suiteList div.suite{
+	background-image:url(/_img/suite_bg.png);
+	background-position:top center;
+	background-repeat:no-repeat;
+	min-height:28px;
+	border-bottom:1px solid #CCC;
+	padding:0px 2px;
+}
+
+div.suiteList div.suite span{
+	margin-top:5px;
+	margin-left:2px;
+	float:left;
+}
+
+div.suiteList div.suite a{
+	float:right;
+	margin-left:3px;
+	margin-top:6px;
+}
+div.suiteList div.suite span a{
+	float:none;
+	text-decoration:none;
+	color:#000 !important;
+	margin:0;
+}
+
+
+/*	METRICS	*/
+
+table.metrics{
+	width:100%;
+	margin-top:2px;
+	margin-bottom:6px;
+}
+table.metrics td{
+	padding:10px 16px 0 16px;	
+	width:33%;
+}
+
+div.metrics div.testCase h3{
+	margin-left:16px !important;
+}
+div.metrics div.testCase h4{
+	margin-left:10px !important;
+}
+div.metrics div.hasHead table.metrics td{
+	padding-top:0;
+}
+div.metrics div.methodResult td{
+	width:25%;
+}
+div.metrics span.error{
+	color:#C00;
+}
+
+/*	SUITE EDITOR */
+
+#suiteEditor input,
+#suiteEditor textarea,
+#suiteEditor select{
+	border: 1px #CCC solid ;
+	border-color:#AAA;
+	font-size:11px;
+	font-family:"Trebuchet MS",Verdana, Geneva, Arial, Helvetica, sans-serif;
+}
+
+#suiteEditor div.col1{
+	margin:0px 16px;
+	display:block;
+	width:334px;
+	float:left;
+	overflow:hidden;
+	padding:0px;
+}
+
+
+#suiteEditor div.col1 label{
+	font-size:18px;
+	height:49px;
+	line-height:49px;
+	font-weight:normal;
+	text-transform:uppercase;
+}
+#suiteEditor div.col1 label input{
+	float:right;
+	margin-top:15px;
+	margin-right:1px;
+	width:180px;
+}
+
+#suiteEditor div.col2 button{
+	float:right;
+	margin:12px 18px 0 0;
+}
+#suiteEditor div.col2 h2{
+	font-size:18px;
+	height:49px;
+	line-height:49px;
+	font-weight:normal;
+	text-transform:uppercase;
+}
+
+#suiteEditor textarea{
+	width:331px;	
+	height:239px;
+}
+#suiteEditor select{
+	height:240px;
+	margin-bottom:10px;
+	width:280px;
+}
+
+
+/*	TESTCASES	*/
+
+
+div.testCase{
+	width:665px;
+	background-image:url(/_img/content_bg.png);
+	background-repeat:repeat-y;
+	margin-bottom:8px;
+}
+
+div.testCase div.body{
+	background-image:url(/_img/content_hdr.png);
+	background-position:top center;
+	background-repeat:no-repeat;
+}
+div.testCase div.footer{
+	background-image:url(/_img/content_ftr.png);
+	background-position:top center;
+	background-repeat:no-repeat;
+	height:9px;
+	font-size:9px;
+	line-height:9px;
+}
+
+div.testCase h3{
+	height:33px;
+	line-height:31px;
+	font-size:14px;
+	font-weight:bold;
+}
+
+div.testCase h3 img.loading{
+	margin:8px 12px;
+	float:right;
+}
+div.testCase h3 input{
+	margin:10px 11px 0 15px;
+	float:left;
+}
+
+
+/* TEST METHODS	*/
+
+div.testMethod{
+	background-image:url(/_img/testMethod_bg.png);
+	background-repeat:repeat-y;
+	background-position:left top;
+	margin-left:6px;
+	margin-bottom:4px;
+}
+
+div.testMethod div.body{
+	background-image:url(/_img/testMethod_hdr.png);
+	background-position:left top;
+	background-repeat:no-repeat;
+}
+div.testMethod div.footer{
+	background-image:url(/_img/testMethod_ftr.png);
+	background-position:left top;
+	background-repeat:no-repeat;
+	height:5px;
+	font-size:5px;
+	line-height:5px;
+}
+div.testMethod h4{
+	height:26px;
+	line-height:26px;
+	font-size:14px;
+	font-weight:normal;
+}
+div.testMethod h4 input{
+	margin:7px 7px 0 9px;
+	float:left;
+}
+div.testCase h4 img.loading{
+	margin:5px 12px;
+	float:right;
+}
+
+div.testMethodSkipped{
+	background-image:url(/_img/testMethod_skipped.png);
+	background-repeat:repeat-y;
+	background-position:left top;
+	margin-left:6px;
+	margin-bottom:4px;
+}
+
+div.testMethodSkipped div.body{
+	background-image:none;
+}
+div.testMethodSkipped div.footer{
+	display:none;
+}
+
+
+/* ASSERTIONS RESULTS */
+div.methodResult{
+	margin:0 10px 0 3px;
+}
+div.methodResult table{
+	width:100%;
+}
+
+div.methodResult table td{
+	padding:4px 6px;
+}
+div.methodResult table i{
+	opacity:0.5;
+}
+div.methodResult table td.name{
+	width:170px;
+	padding-left:6px;
+}
+div.methodResult table td.time{
+	white-space:nowrap;
+	width:80px;
+	padding-right:6px;
+	text-align:right;
+}
+
+div.methodResult tr.passed {
+	background: url(/_img/result_ok.png) repeat-x left top;
+}
+
+div.methodResult tr.failed {
+	background: url(/_img/result_failed.png) repeat-x left top;
+}
+
+div.methodResult tr.crashed {
+	background: url(/_img/result_crashed.png) repeat-x left top;
+}
+
+div.methodResult tr.queued {
+	background: url(/_img/result_queued.png) repeat-x left top;
+}
+

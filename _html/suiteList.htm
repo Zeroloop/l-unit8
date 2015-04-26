@@ -1,0 +1,15 @@
+<div class="suiteList">
+	<div class="header">
+		<a href="/index.lasso?suiteTask=new" class="medium">New</a>
+		<a href="/index.lasso?suiteName=Scan&suiteTask=view" class="medium">Scan</a>
+		<h2>Test Suites</h2>
+	</div>
+	[iterate:self->suiteFiles,local('filename')]
+	<div class="suite[!loop_count%2?' altrow']">
+		<a href="/index.lasso?suiteName=[encode_strictURL(#fileName)]&suiteTask=view" class="small">View</a>
+		<a href="/index.lasso?suiteName=[encode_strictURL(#fileName)]&suiteTask=edit" class="small">Edit</a>
+		<a href="/index.lasso?suiteName=[encode_strictURL(#fileName)]&suiteTask=delete" class="small">Del</a>
+		<span><a href="/index.lasso?suiteName=[encode_strictURL(#fileName)]&suiteTask=view">[#filename]</a></span>
+	</div>
+	[/iterate]
+</div>

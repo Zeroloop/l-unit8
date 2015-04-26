@@ -1,0 +1,13 @@
+<?lassoscript//=============================================================================//// example of testCase code////.............................................................................define_type('test_template', 'unit_testCase');//============================================================================
+//
+//		->	Setup
+//
+//............................................................................	define_tag:'setup';		//	Set any required variables here				//	Create any required tables here			namespace_using:namespace_page;			//	Create any required stubs or mock objects here			//	Load any required tags here					/namespace_using;	/define_tag;//============================================================================
+//
+//		->	Destroy
+//
+//............................................................................	define_tag:'destroy';		//	Remove any set variables		//	Remove any created tables here		/define_tag;//============================================================================
+//
+//		->	Tests to run
+//
+//............................................................................	define_tag:'test_example';		self->assert_isTrue(true);	/define_tag;	/define_type;?>

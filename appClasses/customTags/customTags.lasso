@@ -1,0 +1,1 @@
+<?LassoScript 		define_tag:'returnAnArray';		return:array;	/define_tag;	?>

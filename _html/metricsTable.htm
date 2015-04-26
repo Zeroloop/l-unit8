@@ -1,0 +1,23 @@
+<table class="metrics" cellSpacing=0>
+	<tr valign="top">
+		<td rowspan=2 width=40%>
+			Tasks Total: [self->calcTotalTasks]<br/>
+			Tasks Tested: [self->calcTasksTested]<br/>
+			Tasks Passed: [self->calcTasksPassed]<br/>
+			Tasks Failed: [self->calcTasksFailed]<br/>
+			Tasks Crashed: [self->calcTasksCrashed]
+		</td>
+		<td>
+			App Class Methods: [self->appMethods->size]<br/>
+			Test Case Methods: [self->testMethods->size]<br/>
+			Method Test Coverage: [self->calcMethodCoverage]%<br/><br/>
+			Total Time: [self->calcTotalTime]
+		</td>
+		<td>
+			App Class Lines: [self->calcAppLines]<br/>
+			Test Case Lines: [self->calcTestLines]<br/>
+			Line Test Coverage: [self->calcLineCoverage]%<br/>
+			<span class="error">[self->calcWarnings]</span>
+		</td>
+	</tr>
+</table>

@@ -1,0 +1,4 @@
+# enter test case names
+# to start new Suite file
+
+/__classes/debug/test_debug.ctyp

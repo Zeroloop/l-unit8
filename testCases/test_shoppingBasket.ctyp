@@ -1,0 +1,202 @@
+﻿<?lassoscript
+//=============================================================================
+//
+// example of testCase code
+//
+//.............................................................................
+
+define_type('test_shoppingBasket', 'unit_testCase');
+
+
+//=============================================================================
+//
+//	->getClass
+//
+//	identify the app class that will be tested by this testCase
+//
+
+define_tag:'getClass';
+
+	return: self->classPath + 'example_shoppingBasket.ctyp';
+
+/define_tag;
+
+//=============================================================================
+//
+//	->setup
+//
+//	build whatever is necessary here to enable the tests to run
+//
+
+define_tag:'setup';
+
+	include: self->classPath + 'example_shoppingBasket.ctyp';
+	var:'testBasket' = shoppingBasket;
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->test_addItem
+//
+//	sample test method
+//
+// 	use multiple test_something methods
+//	each ->test_something method should focus on testing 
+//	the equivalent ->something method of the class being tested
+//	and named accordingly
+//
+
+define_tag:'test_addItem';
+
+	local:'taskResult' = map;
+
+//	(this `test method` has five test `tasks`)
+
+//	write the code that does all the gymnastics to generate a result
+//	assert here that the result should be something
+//	the purpose of the assertion is to test the condition and
+//	automate the messaging of the system and results output
+
+//	assertions are made against a single data value
+//	this test is considered a single `task`
+
+//	write some code that parallels what an application would do
+
+	$testBasket->addItem(
+		-sku = 'abc123',
+		-description = 'Lasso Unit Testing',
+		-price = 24.99
+	);
+
+//	now check that the results of that action yielded what we expect
+//	let's try some assertions first
+
+	self->assert_isArray("$testBasket->'lineItems'");
+
+	self->assert_isPair("$testBasket->'lineItems'->get:1");
+	
+	self->assert_isArraySizeOf("$testBasket->'lineItems'", 1);
+
+	//	L-Unit now supports testing direct types
+
+	self->assert_isSizeOf($testBasket->'lineItems',1);
+	self->assert_isSizeMin($testBasket->'lineItems',1);
+
+		
+
+//--------------------------------------
+//			Simulate a custom error
+
+
+	self->startTask;
+	self->storeResult(
+		 map(
+			'name'		= 'showFailedTask',
+			'result'	= false,
+			'message'	= 'force a failed task to show a red bar',
+			'time'		= self->endTask
+		)
+	);
+
+
+//--------------------------------------
+
+//	custom tests w/o assertions are done like this:
+//	write whatever conditions are needed
+//	to determine a boolean pass|fail (true|false) result
+//	and store the results as shown
+//	this test is considered a single `task`
+
+//	in this example, we'll verify that the timestamp element 
+//	of a lineitem is a datetime that is before the current time
+//	why? doesn't matter. Just trying to write a test for which
+//	there is not an assertion.
+
+	self->startTask;
+
+	if: $testBasket->lineItems->get(1)->second->find('timestamp') <= (date: date, -format='%Q %T');
+		self->taskPassed = true;
+		self->taskMessage = 'passed';
+	else;
+		self->taskMessage = 'the line item timestamp (';
+		self->taskMessage += (($testBasket->'lineItems'->get:1->second)->find:'timestamp');
+		self->taskMessage += ') is after the current time (';
+		self->taskMessage += (date: date, -format='%Q %T');
+		self->taskMessage += ')';
+	/if;
+
+	self->storeResult(
+		map(
+			'name'		= 'customTaskName',
+			'result'		= self->taskPassed,
+			'message'	= self->taskMessage,
+			'time'			= self->endTask
+		)
+	);
+
+/define_tag;
+
+
+//============================================================================
+//
+//	->test_deleteItem
+//
+//............................................................................
+
+define_tag:'test_deleteItem';
+
+	$testBasket->addItem(
+		-sku 				= 'abc123',
+		-description 	= 'Lasso Unit Testing',
+		-price 			= 24.99
+	);
+
+	$testBasket->addItem(
+		-sku 				= 'xyz123',
+		-description 	= 'Lasso Unit Testing',
+		-price 			= 24.99
+	);
+
+	sleep:300;
+
+	self->assert_isArraySizeOf($testBasket->lineItems,2);
+
+	if: $testBasket->size == 2;
+		$testBasket->deleteItem(-sku='abc123');
+		self->assert_isArraySizeOf($testBasket->lineItems,1);
+	/if;
+
+/define_tag;
+
+
+//============================================================================
+//
+//	->test_tagThatFails
+//
+//	shows how a syntax error will be trapped by testCase and reported
+//	in the results 
+//
+//............................................................................
+
+define_tag:'test_tagThatFails';
+	$testBasket->tagThatFails(-sku = 'abc123');
+/define_tag;
+
+
+//=============================================================================
+//
+//	->tearDown
+//
+
+define_tag:'tearDown';
+
+//	destroy whatever was created by ->setup
+
+	var:'testBasket' = null;
+	vars->remove('testBasket');
+
+/define_tag;
+/define_type;
+?>

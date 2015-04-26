@@ -1,0 +1,1962 @@
+﻿<?lassoscript
+
+define_type:'assertions';
+
+	local:'assertionResults' = array;
+
+//=============================================================================
+//
+//	->storeResult
+//
+
+define_tag:'storeResult',
+	-required = 'assertResult';
+
+	(self->'assertionResults')->insert:#assertResult;
+
+/define_tag;
+
+//============================================================================
+//
+//	->invokeAssertionFor (private)
+//
+//	invokes an insertion expression 
+//
+//............................................................................
+
+define_tag:'invokeAssertionFor',
+	-required = 'expr', -copy;
+
+	#expr->type == 'pair' 
+	? 	return:#expr;
+
+	#expr->type != 'string' || (string(#expr)->trim)
+	? 	return:#expr->invoke;
+	
+	protect;
+		handle_error;return:#expr->invoke;/handle_error;
+
+		local:'exprString' = '[return: ' + #expr + ']';
+		return: (tag->compile(#exprString)&invoke);
+
+	/protect;
+
+/define_tag;
+
+
+//: -
+//=============================================================================
+//
+//	->assert_isTrue
+//
+//............................................................................
+
+define_tag:'assert_isTrue',
+	-required = 'expr', -copy;//, -type = 'string';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'result'			= false,
+		'message'		= string;
+
+	#exprValue = self->invokeAssertionFor:#expr;
+
+	if: #exprValue == true;
+		#result = true;
+		#message = 'passed';
+	else;
+		#message += '<i>'#expr'</i>';
+		#message += ' == ';
+		#message += #exprValue;
+		#message += ' which is not true';
+	/if;
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isFalse
+//
+//............................................................................
+
+define_tag:'assert_isFalse',
+	-required = 'expr', -copy;//, -type = 'string';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'result'			= false,
+		'message'		= string;
+
+	#exprValue = self->invokeAssertionFor:#expr;
+
+	if: #exprValue == false;
+		#result = true;
+		#message = 'passed';
+	else;
+		#message += '<i>'#expr'</i>';
+		#message += ' == ';
+		#message += #exprValue;
+		#message += ' which is not false';
+	/if;
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isNotEmpty
+//
+//............................................................................
+
+define_tag:'assert_isNotEmpty',
+	-required = 'expr', -copy;//, -type = 'string';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'result'		= false,
+		'message'		= string;
+
+	#exprValue = self->invokeAssertionFor:#expr;
+
+	if: #exprValue == true;
+		#result = true;
+		#message = 'passed';
+	else;
+		#message += '<i>'#expr'</i>';
+		#message += ' is empty';
+	/if;
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isNotEmpty
+//
+//............................................................................
+
+define_tag:'assert_isNotNull',
+	-required = 'expr', -copy;//, -type = 'string';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'result'		= false,
+		'message'		= string;
+
+	#exprValue = self->invokeAssertionFor:#expr;
+
+	if: #exprValue !== null;
+		#result = true;
+		#message = 'passed';
+	else;
+		#message += '<i>'#expr'</i>';
+		#message += ' is null';
+	/if;
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//: -
+//=============================================================================
+//
+//	->assert_isType
+//
+//............................................................................
+
+define_tag:'assert_isTypeOf',
+	-required = 'expr', -copy,// -type = 'string',
+	-required = 'type', -type = 'string';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'result'		= false,
+		'message'		= string;
+
+	#exprValue = self->invokeAssertionFor:#expr;
+
+	if: (#type->get:1 == 'a') ||
+		(#type->get:1 == 'e') ||
+		(#type->get:1 == 'i') ||
+		(#type->get:1 == 'o') ||
+		(#type->get:1 == 'u');
+		local:'article'= ' an ';
+	else;
+		local:'article'= ' a ';
+	/if;
+
+	if: #exprValue->type == #type;
+		#result = true;
+		#message = 'passed';
+	else;
+		#message += '<i>'#expr'</i>';
+		#message += ' == ';
+		#message += #exprValue->type;
+		#message += ' which is not';
+		#message += #article;
+		#message += #type;
+	/if;
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isBoolean
+//
+//............................................................................
+
+define_tag:'assert_isBoolean',
+	-required = 'expr', -copy;//, -type = 'string';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'result'		= false,
+		'message'		= string;
+
+	#exprValue = self->invokeAssertionFor:#expr;
+
+	if: #exprValue->type == 'boolean';
+		#result = true;
+		#message = 'passed';
+	else;
+		#message += '<i>'#expr'</i>->type';
+		#message += ' == ';
+		#message += #exprValue->type;
+		#message += ' which is not an boolean';
+	/if;
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isInteger
+//
+//............................................................................
+
+define_tag:'assert_isInteger',
+	-required = 'expr', -copy;//, -type = 'string';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'result'		= false,
+		'message'		= string;
+
+	#exprValue = self->invokeAssertionFor:#expr;
+
+	if: #exprValue->type == 'integer';
+		#result = true;
+		#message = 'passed';
+	else;
+		#message += '<i>'#expr'</i>->type';
+		#message += ' == ';
+		#message += #exprValue->type;
+		#message += ' which is not an integer';
+	/if;
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isDecimal
+//
+//............................................................................
+
+define_tag:'assert_isDecimal',
+	-required = 'expr', -copy;//, -type = 'string';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'result'			= false,
+		'message'		= string;
+
+	#exprValue = self->invokeAssertionFor:#expr;
+
+	if: #exprValue->type == 'decimal';
+		#result = true;
+		#message = 'passed';
+	else;
+		#message += '<i>'#expr'</i>->type';
+		#message += ' == ';
+		#message += #exprValue->type;
+		#message += ' which is not a decimal';
+	/if;
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isString
+//
+//............................................................................
+
+define_tag:'assert_isString',
+	-required = 'expr', -copy;//, -type = 'string';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'result'		= false,
+		'message'		= string;
+
+	#exprValue = self->invokeAssertionFor:#expr;
+
+	if: #exprValue->type == 'string';
+		#result = true;
+		#message = 'passed';
+	else;
+		#message += '<i>'#expr'</i>->type';
+		#message += ' == ';
+		#message += #exprValue->type;
+		#message += ' which is not a string';
+	/if;
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isBytes
+//
+//............................................................................
+
+define_tag:'assert_isBytes',
+	-required = 'expr', -copy;//, -type = 'string';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'result'		= false,
+		'message'		= string;
+
+	#exprValue = self->invokeAssertionFor:#expr;
+
+	if: #exprValue->type == 'bytes';
+		#result = true;
+		#message = 'passed';
+	else;
+		#message += '<i>'#expr'</i>->type';
+		#message += ' == ';
+		#message += #exprValue->type;
+		#message += ' which is not a bytes';
+	/if;
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isPair
+//
+//............................................................................
+
+define_tag:'assert_isPair',
+	-required = 'expr', -copy;//, -type = 'string';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'result'		= false,
+		'message'		= string;
+
+	#exprValue = self->invokeAssertionFor:#expr;
+
+	if: #exprValue->type == 'pair';
+		#result = true;
+		#message = 'passed';
+	else;
+		#message += '<i>'#expr'</i>->type';
+		#message += ' == ';
+		#message += #exprValue->type;
+		#message += ' which is not a pair';
+	/if;
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isArray
+//
+//............................................................................
+
+define_tag:'assert_isArray',
+	-required = 'expr', -copy;//, -type = 'string';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'result'			= false,
+		'message'		= string;
+
+	#exprValue = self->invokeAssertionFor:#expr;
+
+	if: #exprValue->type == 'array';
+		#result = true;
+		#message = 'passed';
+	else;
+		#message += '<i>'#expr'</i>->type';
+		#message += ' == ';
+		#message += #exprValue->type;
+		#message += ' which is not an array';
+	/if;
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isMap
+//
+//............................................................................
+
+define_tag:'assert_isMap',
+	-required = 'expr', -copy;//, -type = 'string';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'result'			= false,
+		'message'		= string;
+
+	#exprValue = self->invokeAssertionFor:#expr;
+
+	if: #exprValue->type == 'map';
+		#result = true;
+		#message = 'passed';
+	else;
+		#message += '<i>'#expr'</i>->type';
+		#message += ' == ';
+		#message += #exprValue->type;
+		#message += ' which is not a map';
+	/if;
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isSet
+//
+//............................................................................
+
+define_tag:'assert_isSet',
+	-required = 'expr', -copy;//, -type = 'string';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'result'		= false,
+		'message'		= string;
+
+	#exprValue = self->invokeAssertionFor:#expr;
+
+	if: #exprValue->type == 'set';
+		#result = true;
+		#message = 'passed';
+	else;
+		#message += '<i>'#expr'</i>->type';
+		#message += ' == ';
+		#message += #exprValue->type;
+		#message += ' which is not a set';
+	/if;
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isList
+//
+//............................................................................
+
+define_tag:'assert_isList',
+	-required = 'expr', -copy;//, -type = 'string';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'result'		= false,
+		'message'		= string;
+
+	#exprValue = self->invokeAssertionFor:#expr;
+
+	if: #exprValue->type == 'list';
+		#result = true;
+		#message = 'passed';
+	else;
+		#message += '<i>'#expr'</i>->type';
+		#message += ' == ';
+		#message += #exprValue->type;
+		#message += ' which is not a list';
+	/if;
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isStack
+//
+//............................................................................
+
+define_tag:'assert_isStack',
+	-required = 'expr', -copy;//, -type = 'string';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'result'		= false,
+		'message'		= string;
+
+	#exprValue = self->invokeAssertionFor:#expr;
+
+	if: #exprValue->type == 'stack';
+		#result = true;
+		#message = 'passed';
+	else;
+		#message += '<i>'#expr'</i>->type';
+		#message += ' == ';
+		#message += #exprValue->type;
+		#message += ' which is not a stack';
+	/if;
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isQueue
+//
+//............................................................................
+
+define_tag:'assert_isQueue',
+	-required = 'expr', -copy;//, -type = 'string';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'result'		= false,
+		'message'		= string;
+
+	#exprValue = self->invokeAssertionFor:#expr;
+
+	if: #exprValue->type == 'queue';
+		#result = true;
+		#message = 'passed';
+	else;
+		#message += '<i>'#expr'</i>->type';
+		#message += ' == ';
+		#message += #exprValue->type;
+		#message += ' which is not a queue';
+	/if;
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isPriorityQueue
+//
+//............................................................................
+
+define_tag:'assert_isPriorityQueue',
+	-required = 'expr', -copy;//, -type = 'string';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'result'		= false,
+		'message'		= string;
+
+	#exprValue = self->invokeAssertionFor:#expr;
+
+	if: #exprValue->type == 'priorityqueue';
+		#result = true;
+		#message = 'passed';
+	else;
+		#message += '<i>'#expr'</i>->type';
+		#message += ' == ';
+		#message += #exprValue->type;
+		#message += ' which is not a priorityqueue';
+	/if;
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isSeries
+//
+//............................................................................
+
+define_tag:'assert_isSeries',
+	-required = 'expr', -copy;//, -type = 'string';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'result'		= false,
+		'message'		= string;
+
+	#exprValue = self->invokeAssertionFor:#expr;
+
+	if: #exprValue->type == 'series';
+		#result = true;
+		#message = 'passed';
+	else;
+		#message += '<i>'#expr'</i>->type';
+		#message += ' == ';
+		#message += #exprValue->type;
+		#message += ' which is not a series';
+	/if;
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isTreeMap
+//
+//............................................................................
+
+define_tag:'assert_isTreeMap',
+	-required = 'expr', -copy;//, -type = 'string';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'result'		= false,
+		'message'		= string;
+
+	#exprValue = self->invokeAssertionFor:#expr;
+
+	if: #exprValue->type == 'treemap';
+		#result = true;
+		#message = 'passed';
+	else;
+		#message += '<i>'#expr'</i>->type';
+		#message += ' == ';
+		#message += #exprValue->type;
+		#message += ' which is not a treemap';
+	/if;
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isTreeMap
+//
+//............................................................................
+
+define_tag:'assert_isFile',
+	-required = 'expr', -copy;//, -type = 'string';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'result'		= false,
+		'message'		= string;
+
+	#exprValue = self->invokeAssertionFor:#expr;
+
+	if: #exprValue->type == 'file';
+		#result = true;
+		#message = 'passed';
+	else;
+		#message += '<i>'#expr'</i>->type';
+		#message += ' == ';
+		#message += #exprValue->type;
+		#message += ' which is not a file';
+	/if;
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isImage
+//
+//............................................................................
+
+define_tag:'assert_isImage',
+	-required = 'expr', -copy;//, -type = 'string';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'result'		= false,
+		'message'		= string;
+
+	#exprValue = self->invokeAssertionFor:#expr;
+
+	if: #exprValue->type == 'image';
+		#result = true;
+		#message = 'passed';
+	else;
+		#message += '<i>'#expr'</i>->type';
+		#message += ' == ';
+		#message += #exprValue->type;
+		#message += ' which is not an image';
+	/if;
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isTreeMap
+//
+//............................................................................
+
+define_tag:'assert_isXML',
+	-required = 'expr', -copy;//, -type = 'string';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'result'		= false,
+		'message'		= string;
+
+	#exprValue = self->invokeAssertionFor:#expr;
+
+	if: #exprValue->type == 'xml';
+		#result = true;
+		#message = 'passed';
+	else;
+		#message += '<i>'#expr'</i>->type';
+		#message += ' == ';
+		#message += #exprValue->type;
+		#message += ' which is not an xml';
+	/if;
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+//: -
+//=============================================================================
+//
+//	->assert_isIntegerEqualTo
+//
+//............................................................................
+
+define_tag:'assert_isIntegerEqualTo',
+	-required = 'expr', -copy,
+	-required = 'equalTo',	-type = 'integer';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'result'			= false,
+		'message'		= string;
+
+	#exprValue = self->invokeAssertionFor:#expr;
+
+	#message += '<i>'#expr'</i>';
+	#message += ' == ' + #exprValue;
+	#message += ' which ';
+
+	if: #exprValue->type == 'integer';
+		if: #exprValue == #equalTo;
+			#result = true;
+		else;
+			#message += ' is not == ' + #equalTo;
+		/if;
+	else;
+			#message += ' is not a integer';
+	/if;
+
+	#result ? #message = 'passed';
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isIntegerInRange
+//
+//............................................................................
+
+define_tag:'assert_isIntegerInRange',
+	-required = 'expr', -copy,// -type = 'string',
+	-required = 'min',	-type = 'integer',
+	-required = 'max',	-type = 'integer';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'result'		= false,
+		'message'		= string;
+
+	#exprValue = self->invokeAssertionFor:#expr;
+
+	#message += '<i>'#expr'</i>';
+	#message += ' == ' + #exprValue;
+	#message += ' which ';
+
+	if: #exprValue->type == 'integer';
+		if: #exprValue >= #min;
+			if: #exprValue <= #max;
+				#result = true;
+			else;
+				#message += ' is not <= ' + #max;
+			/if;
+		else;
+				#message += ' is not >= ' + #min;
+		/if;
+	else;
+				#message += ' is not an integer';
+	/if;
+
+	#result ? #message = 'passed';
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isIntegerMin
+//
+//............................................................................
+
+define_tag:'assert_isIntegerMin',
+	-required = 'expr', -copy,
+	-required = 'min',	-type = 'integer';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'result'			= false,
+		'message'		= string;
+
+	#exprValue = self->invokeAssertionFor:#expr;
+
+	#message += '<i>'#expr'</i>';
+	#message += ' == ' + #exprValue;
+	#message += ' which ';
+
+	if: #exprValue->type == 'integer';
+		if: #exprValue >= #min;
+			#result = true;
+		else;
+			#message += ' is not >= ' + #min;
+		/if;
+	else;
+			#message += ' is not an integer';
+	/if;
+
+	#result ? #message = 'passed';
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isIntegerMax
+//
+//............................................................................
+
+define_tag:'assert_isIntegerMax',
+	-required = 'expr', -copy,
+	-required = 'max',	-type = 'integer';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'result'			= false,
+		'message'		= string;
+
+	#exprValue = self->invokeAssertionFor:#expr;
+
+	#message += '<i>'#expr'</i>';
+	#message += ' == ' + #exprValue;
+	#message += ' which ';
+
+	if: #exprValue->type == 'integer';
+		if: #exprValue <= #max;
+			#result = true;
+		else;
+			#message += ' is not <= ' + #max;
+		/if;
+	else;
+			#message += ' is not an integer';
+	/if;
+
+	#result ? #message = 'passed';
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//: -
+//=============================================================================
+//
+//	->assert_isDecimalEqualTo
+//
+//............................................................................
+
+define_tag:'assert_isDecimalEqualTo',
+	-required = 'expr', -copy,
+	-required = 'equalTo';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'result'		= false,
+		'message'		= string;
+
+	#exprValue = self->invokeAssertionFor:#expr;
+
+	#message += '<i>'#expr'</i>';
+	#message += ' == ' + #exprValue;
+	#message += ' which ';
+
+	if: #exprValue->type == 'decimal';
+		if: #exprValue == #equalTo;
+			#result = true;
+		else;
+			#message += ' is not == ' + #equalTo;
+		/if;
+	else;
+			#message += ' is not a decimal';
+	/if;
+
+	#result ? #message = 'passed';
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isDecimalInRange
+//
+//............................................................................
+
+define_tag:'assert_isDecimalInRange',
+	-required = 'expr', -copy,
+	-required = 'min',
+	-required = 'max';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'result'			= false,
+		'message'		= string;
+
+	#exprValue = self->invokeAssertionFor:#expr;
+
+	#message += '<i>'#expr'</i>';
+	#message += ' == ' + #exprValue;
+	#message += ' which ';
+
+	if: #exprValue->type == 'decimal';
+		if: #exprValue >= #min;
+			if: #exprValue <= #max;
+				#result = true;
+			else;
+				#message += ' is not <= ' + #max;
+			/if;
+		else;
+				#message += ' is not >= ' + #min;
+		/if;
+	else;
+				#message += ' is not a decimal';
+	/if;
+
+	#result ? #message = 'passed';
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isDecimalMin
+//
+//............................................................................
+
+define_tag:'assert_isDecimalMin',
+	-required = 'expr', -copy,
+	-required = 'min';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'result'		= false,
+		'message'		= string;
+
+	#exprValue = self->invokeAssertionFor:#expr;
+
+	#message += '<i>'#expr'</i>';
+	#message += ' == ' + #exprValue;
+	#message += ' which ';
+
+	if: #exprValue->type == 'decimal';
+		if: #exprValue >= #min;
+			#result = true;
+		else;
+			#message += ' is not >= ' + #min;
+		/if;
+	else;
+			#message += ' is not a decimal';
+	/if;
+
+	#result ? #message = 'passed';
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isDecimalMax
+//
+//............................................................................
+
+define_tag:'assert_isDecimalMax',
+	-required = 'expr', -copy,
+	-required = 'max';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'result'		= false,
+		'message'		= string;
+
+	#exprValue = self->invokeAssertionFor:#expr;
+
+	#message += '<i>'#expr'</i>';
+	#message += ' == ' + #exprValue;
+	#message += ' which ';
+
+	if: #exprValue->type == 'decimal';
+		if: #exprValue <= #max;
+			#result = true;
+		else;
+			#message += ' is not <= ' + #max;
+		/if;
+	else;
+			#message += ' is not a decimal';
+	/if;
+
+	#result ? #message = 'passed';
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//: -
+//=============================================================================
+//
+//	->assert_hasMinSize
+//
+//............................................................................
+
+define_tag:'assert_isSizeOf',
+	-required = 'expr', -copy,// -type = 'string',
+	-required = 'size',	-type = 'integer';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'exprType' 	= null,
+		'result'			= false,
+		'message'		= string;
+	
+	#exprValue = self->invokeAssertionFor(#expr);
+	#exprType 	= #exprValue->type;
+	#exprValue = #exprValue->size;
+	
+	#message += '<i>'#expr'</i>->size';
+	#message += ' == ' + #exprValue;
+	#message += ' which ';
+
+	if: #exprValue == #size;
+		#result = true;
+	else;
+		#message += ' is not equal to the required size of ' + #size;
+	/if;
+
+	#result ? #message = 'passed';
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isSizeInRange
+//
+//............................................................................
+
+define_tag:'assert_isSizeInRange',
+	-required = 'expr', -copy,
+	-required = 'min',	-type = 'integer',
+	-required = 'max',	-type = 'integer';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'exprType' 	= null,
+		'result'			= false,
+		'message'		= string;
+	
+	#exprValue = self->invokeAssertionFor(#expr);
+	#exprType 	= #exprValue->type;
+	#exprValue = #exprValue->size;
+
+	#message += '<i>'#expr'</i>->size';
+	#message += ' == ' + #exprValue;
+	#message += ' which ';
+
+	if: #exprValue >= #min;
+		if: #exprValue <= #max;
+			#result = true;
+		else;
+			#message += ' is fewer than minimum elements of ' + #max;
+		/if;
+	else;
+			#message += ' exceeds max elements of >= ' + #min;
+	/if;
+
+	#result ? #message = 'passed';
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isSizeMin
+//
+//............................................................................
+
+define_tag:'assert_isSizeMin',
+	-required = 'expr',	-copy,
+	-required = 'min',	-type = 'integer';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'exprType' 	= null,
+		'result'			= false,
+		'message'		= string;
+	
+	#exprValue = self->invokeAssertionFor(#expr);
+	#exprType 	= #exprValue->type;
+	#exprValue = #exprValue->size;
+
+	#message += '<i>'#expr'</i>->size';
+	#message += ' == ' + #exprValue;
+	#message += ' which ';
+
+	if: #exprValue >= #min;
+		#result = true;
+	else;
+		#message += ' is fewer than minimum elements of ' + #min;
+	/if;
+
+	#result ? #message = 'passed';
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isSizeMax
+//
+//............................................................................
+
+define_tag:'assert_isSizeMax',
+	-required = 'expr', -copy,
+	-required = 'max',	-type = 'integer';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'exprType' 	= null,
+		'result'			= false,
+		'message'		= string;
+	
+	#exprValue = self->invokeAssertionFor(#expr);
+	#exprType 	= #exprValue->type;
+	#exprValue = #exprValue->size;
+
+	#message += '<i>'#expr'</i>->size';
+	#message += ' == ' + #exprValue;
+	#message += ' which ';
+
+	if: #exprValue <= #max;
+		#result = true;
+	else;
+		#message += ' exceeds max elements of ' + #max;
+	/if;
+
+	#result ? #message = 'passed';
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isArraySizeMin
+//
+//............................................................................
+
+define_tag:'assert_isArraySizeOf',
+	-required = 'expr', -copy,
+	-required = 'size',	-type = 'integer';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'exprType' 	= null,
+		'result'			= false,
+		'message'		= string;
+	
+	#exprValue = self->invokeAssertionFor(#expr);
+	#exprType 	= #exprValue->type;
+	#exprValue = #exprValue->size;
+	
+	#message += '<i>'#expr'</i>->size';
+	#message += ' == ' + #exprValue;
+	#message += ' which ';
+
+	if: #exprType == 'array';
+		if: #exprValue == #size;
+			#result = true;
+		else;
+			#message += ' is not equal to the required size of ' + #size;
+		/if;
+	else;
+			#message += ' is not an array';
+	/if;
+
+	#result ? #message = 'passed';
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isArraySizeInRange
+//
+//............................................................................
+
+define_tag:'assert_isArraySizeInRange',
+	-required = 'expr', -copy,
+	-required = 'min',	-type = 'integer',
+	-required = 'max',	-type = 'integer';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'exprType' 	= null,
+		'result'			= false,
+		'message'		= string;
+	
+	#exprValue = self->invokeAssertionFor(#expr);
+	#exprType 	= #exprValue->type;
+	#exprValue = #exprValue->size;
+	
+	#message += '<i>'#expr'</i>->size';
+	#message += ' == ' + #exprValue;
+	#message += ' which ';
+
+	if: #exprType == 'array';
+		if: #exprValue >= #min;
+			if: #exprValue <= #max;
+				#result = true;
+			else;
+				#message += ' is fewer than minimum elements of ' + #max;
+			/if;
+		else;
+				#message += ' exceeds max elements of >= ' + #min;
+		/if;
+	else;
+				#message += ' is not an array';
+	/if;
+
+	#result ? #message = 'passed';
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isArraySizeMin
+//
+//............................................................................
+
+define_tag:'assert_isArraySizeMin',
+	-required = 'expr', -copy,
+	-required = 'min',	-type = 'integer';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'exprType' 	= null,
+		'result'			= false,
+		'message'		= string;
+	
+	#exprValue = self->invokeAssertionFor(#expr);
+	#exprType 	= #exprValue->type;
+	#exprValue = #exprValue->size;
+
+	#message += '<i>'#expr'</i>->size';
+	#message += ' == ' + #exprValue;
+	#message += ' which ';
+
+	if: #exprType == 'array';
+		if: #exprValue >= #min;
+			#result = true;
+		else;
+			#message += ' is fewer than minimum elements of ' + #min;
+		/if;
+	else;
+			#message += ' is not an array';
+	/if;
+
+	#result ? #message = 'passed';
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isArraySizeMax
+//
+//............................................................................
+
+define_tag:'assert_isArraySizeMax',
+	-required = 'expr', -copy,// -type = 'string',
+	-required = 'max',	-type = 'integer';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'exprType' 	= null,
+		'result'			= false,
+		'message'		= string;
+	
+	#exprValue = self->invokeAssertionFor(#expr);
+	#exprType 	= #exprValue->type;
+	#exprValue = #exprValue->size;
+	
+	#message += '<i>'#expr'</i>->size';
+	#message += ' == ' + #exprValue;
+	#message += ' which ';
+
+	if: #exprType == 'array';
+		if: #exprValue <= #max;
+			#result = true;
+		else;
+			#message += ' exceeds max elements of ' + #max;
+		/if;
+	else;
+			#message += ' is not an array';
+	/if;
+
+	#result ? #message = 'passed';
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//:	-
+//=============================================================================
+//
+//	->assert_isStringContaining
+//
+//............................................................................
+
+define_tag:'assert_isStringContaining',
+	-required = 'expr', -copy,
+	-required = 'contains';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'exprType' 	= null,
+		'result'			= false,
+		'message'		= string;
+	
+	#exprValue = self->invokeAssertionFor(#expr);
+	#exprType 	= #exprValue->type;
+	#exprValue = #exprValue >> #contains;
+
+	if: #exprType->type == 'string';
+		if: #exprValue == true;
+			#result = true;
+			#message = 'passed';
+		else;
+				#message += '<i>'#expr'</i> >>';
+			#message += ' does not contain "';
+			#message += #contains;
+			#message += '"';
+		/if;
+	else;
+			#message += #exprType->type' is not a string';
+	/if;
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isArrayContaining
+//
+//............................................................................
+
+define_tag:'assert_isArrayContaining',
+	-required = 'expr', -copy,
+	-required = 'contains';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'exprType' 	= null,
+		'result'			= false,
+		'message'		= string;
+	
+	#exprValue = self->invokeAssertionFor(#expr);
+	#exprType 	= #exprValue->type;
+	#exprValue = #exprValue >> #contains;
+
+	if: #exprType == 'array';
+		if: #exprValue == true;
+			#result = true;
+			#message = 'passed';
+		else;
+				#message += '<i>'#expr'</i> >>';
+			#message += ' does not contain "';
+			#message += #contains;
+			#message += '"';
+		/if;
+	else;
+			#message += ' is not an array';
+	/if;
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isSetContaining
+//
+//............................................................................
+
+define_tag:'assert_isSetContaining',
+	-required = 'expr', -copy, 
+	-required = 'contains';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'exprType' 	= null,
+		'result'			= false,
+		'message'		= string;
+	
+	#exprValue = self->invokeAssertionFor(#expr);
+	#exprType 	= #exprValue->type;
+	#exprValue = #exprValue >> #contains;
+
+	if: #exprType == 'set';
+		if: #exprValue == true;
+			#result = true;
+			#message = 'passed';
+		else;
+				#message += '<i>'#expr'</i>';
+			#message += ' does not contain "';
+			#message += #contains;
+			#message += '"';
+		/if;
+	else;
+			#message += ' is not a set';
+	/if;
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isListContaining
+//
+//............................................................................
+
+define_tag:'assert_isListContaining',
+	-required = 'expr', -copy,
+	-required = 'contains';
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'exprType' 	= null,
+		'result'			= false,
+		'message'		= string;
+	
+	#exprValue = self->invokeAssertionFor(#expr);
+	#exprType 	= #exprValue->type;
+	#exprValue = #exprValue >> #contains;
+
+	if: #exprType == 'list';
+		if: #exprValue == true;
+			#result = true;
+			#message = 'passed';
+		else;
+				#message += '<i>'#expr'</i>';
+			#message += ' does not contain "';
+			#message += #contains;
+			#message += '"';
+		/if;
+	else;
+			#message += ' is not a list';
+	/if;
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isMapContaining
+//
+//............................................................................
+
+define_tag:'assert_isMapContaining',
+	-required = 'expr', -copy, 
+	-required = 'contains';
+
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'exprType' 	= null,
+		'result'			= false,
+		'message'		= string;
+	
+	#exprValue = self->invokeAssertionFor(#expr);
+	#exprType 	= #exprValue->type;
+	#exprValue = #exprValue >> #contains;
+
+	if: #exprType == 'map';
+		if: #exprValue == true;
+			#result = true;
+			#message = 'passed';
+		else;
+				#message += '<i>'#expr'</i>';
+			#message += ' does not contain "';
+			#message += #contains;
+			#message += '"';
+		/if;
+	else;
+			#message += ' is not a map';
+	/if;
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isTreeMapContaining
+//
+//............................................................................
+
+define_tag:'assert_isTreeMapContaining',
+	-required = 'expr', -copy,
+	-required = 'contains';
+	
+	local:
+		'taskStart'		= _date_msec,
+		'exprValue' 	= null,
+		'exprType' 	= null,
+		'result'			= false,
+		'message'		= string;
+	
+	#exprValue = self->invokeAssertionFor(#expr);
+	#exprType 	= #exprValue->type;
+	#exprValue = #exprValue >> #contains;
+
+	if: #exprType == 'treemap';
+		if: #exprValue == true;
+			#result = true;
+			#message = 'passed';
+		else;
+			#message += '<i>'#expr'</i>';
+			#message += ' does not contain "';
+			#message += #contains;
+			#message += '"';
+		/if;
+	else;
+			#message += ' is not a treemap';
+	/if;
+
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'	= #result,
+		'message'	= #message,
+		'time'		= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isExistingField
+//
+//............................................................................
+
+define_tag:'assert_isExistingField',
+	-required = 'database',-type='string',
+	-required = 'table',-type='string',
+	-required = 'field',-type='string',
+	-optional  = 'host',-type='array';
+	
+	local:'inline' = array;
+	
+	iterate:params,local('pair');
+		#pair->isA('pair') 
+		? 	#pair->first != '-expr' && #pair->first != '-field' ? #inline->insert(#pair)
+		|	#inline->insert(#pair);
+	/iterate;
+
+	local:
+		'taskStart'	= _date_msec,
+		'result'		= false,
+		'message'	= string;
+		
+	inline:#inline,-show;
+		
+		if: field_names >> #field;
+			#result 		= true;
+			#message 	= 'passed';
+		else;
+			#result 			= false;
+			#message 	= 'Field ' #field ' does not exist';
+		/if;
+		
+	/inline;
+	
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'		= #result,
+		'message'	= #message,
+		'time'			= _date_msec - #taskStart);
+
+/define_tag;
+
+
+//=============================================================================
+//
+//	->assert_isFieldContaining
+//
+//............................................................................
+
+define_tag:'assert_isFieldContaining',
+	-required = 'expr',
+	-required = 'database',
+	-required = 'table',
+	-required = 'field';
+	
+	local:'inline' = array;
+	
+	iterate:params,local('pair');
+		#pair->isA('pair') 
+		? 	#pair->first != '-expr' && #pair->first != '-field' ? #inline->insert(#pair)
+		|	#inline->insert(#pair);
+	/iterate;
+
+	local:
+		'taskStart'	= _date_msec,
+		'result'		= false,
+		'message'	= string;
+		
+	inline:#inline;
+		
+		if: field(#field) == #expr;
+			#result 			= true;
+			#message 	= 'passed';
+		else;
+			#result 			= false;
+			#message 	= 'Field ' #field ' == ' field(#field) ' which is not == ' #expr;
+		/if;
+		
+	/inline;
+	
+	self->storeResult: (map:
+		'name'=tag_name,
+		'result'		= #result,
+		'message'	= #message,
+		'time'			= _date_msec - #taskStart);
+
+/define_tag;
+
+
+/define_type;
+?>
+

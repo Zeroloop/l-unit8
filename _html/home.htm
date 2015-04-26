@@ -1,0 +1,54 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+	<title>L-Unit&trade;</title>
+	<meta http-equiv="Content-Type" content="text/html;charset=UTF8" />
+	<link rel="stylesheet" type="text/css" href="/_css/main.css" />
+	<script type="text/javascript" src="/_js/jquery.js" language="JavaScript"></script>
+	<script type="text/javascript" src="/_js/jquery-plugins.js" language="JavaScript"></script>
+	<script type="text/javascript" src="/_js/admin.js" language="JavaScript"></script>
+		
+</head>
+
+<body> 
+
+	<div id="host">
+		<div id="headerLinks">
+			<a href="http://www.lassoDev.org"><span>LassoDev</span></a>
+			<a href="http://www.pageblocks.org"><span>PageBlocks</span></a>
+			<a href="http://www.l-migrator.org"><span>L-Migrator</span></a>
+			<a href="#"><span>L-Revolver</span></a>
+			<a href="http://www.l-debug.org"><span>L-Debug</span></a>
+			<a href="http://www.l-unit.org"  class="active"><span>L-Unit</span></a>
+		</div>
+		<div id="left">
+			<a href="http://www.l-unit.org" class="logo"><img src="/_img/L-Unit_logo.png" alt="" /></a>
+			[self->suiteList]
+		
+		</div>
+		<div id="main">
+			[self->content]
+			[if: self->errors->size]
+				<div id="errors">
+					[self->errors->join('<hr/>')]
+				</div>
+			[/if]
+		</div>	
+		<div id="footer">
+			<div class="col2">
+				Current release by Ke Carlton (<a href="http://www.zeroloop.com">www.zeroloop.com</a>)<br />
+				Original release by Greg Willits (<a href="http://www.railsdev.ws">www.railsdev.ws</a>)<br />
+			</div>
+			<div class="col1">
+				L-Unit&trade; 2.0 &copy; L-Unit.org - All upgrades and fixes welcome home<br/>
+				<strong>L-Unit has NO SECURITY code built into it. DO NOT run it on a live production server.</strong>
+			</div>
+		</div>
+		
+	</div>
+
+</body>
+</html>
+
